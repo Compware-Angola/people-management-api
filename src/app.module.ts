@@ -1,6 +1,4 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EmployeeModule } from './modules/employee/employee.module';
@@ -9,6 +7,7 @@ import { EmployeeModule } from './modules/employee/employee.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      // envFilePath: '.env.dev',
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -26,7 +25,5 @@ import { EmployeeModule } from './modules/employee/employee.module';
     }),
     EmployeeModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
