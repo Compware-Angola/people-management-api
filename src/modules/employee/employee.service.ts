@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
+import { EmployeeQueryDto } from './dto/employee-query.dto';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { PaginationQueryDto } from '../../commons/dto/pagination.dto';
@@ -47,7 +48,18 @@ export class EmployeeService {
     }
   }
 
-  async findAll(query: PaginationQueryDto) {
+  async findAll(query: EmployeeQueryDto) {
+    const values: any[] = [];
+    let whereClause = '';
+
+    if (query.bi) {
+      whereClause = 'WHERE BI = :1';
+      values.push(query.bi);
+    }
+
+    const placeholderOffset = values.length + 1;
+    const placeholderLimit = values.length + 2;
+
     const data = await this.dataSource.query(
       `SELECT CODIGO AS "id",
                      NOME AS "name",
@@ -66,13 +78,15 @@ export class EmployeeService {
                      ESTADO AS "status",
                      CRIADO_EM AS "createdAt"
                 FROM GP_COLABORADORES
+               ${whereClause}
                ORDER BY CODIGO DESC
-              OFFSET :1 ROWS FETCH NEXT :2 ROWS ONLY`,
-      [query.offset, query.limit],
+              OFFSET :${placeholderOffset} ROWS FETCH NEXT :${placeholderLimit} ROWS ONLY`,
+      [...values, query.offset, query.limit],
     );
 
     const totalResult = await this.dataSource.query(
-      `SELECT COUNT(*) AS TOTAL FROM GP_COLABORADORES`,
+      `SELECT COUNT(*) AS TOTAL FROM GP_COLABORADORES ${whereClause}`,
+      values,
     );
 
     const total = Number(totalResult[0]?.TOTAL ?? 0);
