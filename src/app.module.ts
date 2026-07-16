@@ -4,6 +4,9 @@ import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EmployeeModule } from './modules/employee/employee.module';
+import { AttendanceModule } from './modules/attendance/attendance.module';
+import { BiometricModule } from './modules/biometric/biometric.module';
+import { VacationModule } from './modules/vacation/vacation.module';
 
 @Module({
   imports: [
@@ -25,6 +28,9 @@ import { EmployeeModule } from './modules/employee/employee.module';
       }),
     }),
     EmployeeModule,
+    AttendanceModule,
+    BiometricModule,
+    VacationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

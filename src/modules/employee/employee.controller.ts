@@ -13,8 +13,8 @@ import {
 import { EmployeeService } from './employee.service';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
-import { PaginationQueryDto } from '../../commons/dto/pagination.dto';
-import { ApiTags } from '@nestjs/swagger';
+import { EmployeeQueryDto } from './dto/employee-query.dto';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CreateFileDto } from './dto/file/create-file.dto';
 
 @Controller('employees')
@@ -29,7 +29,8 @@ export class EmployeeController {
   }
 
   @Get()
-  findAll(@Query() query: PaginationQueryDto) {
+  @ApiOperation({ summary: 'Listar todos os colaboradores' })
+  findAll(@Query() query: EmployeeQueryDto) {
     return this.employeeService.findAll(query);
   }
 
