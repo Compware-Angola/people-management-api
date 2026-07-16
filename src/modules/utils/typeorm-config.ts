@@ -39,8 +39,8 @@ export const typeOrmConfig: DataSourceOptions = {
   port: env.DB_PORT,
   username: env.DB_USERNAME,
   password: env.DB_PASSWORD,
-  sid: env.DB_SID,
-  // serviceName: env.DB_SERVICE,
+  // sid: env.DB_SID,
+  serviceName: env.DB_SERVICE,
 
 
 
