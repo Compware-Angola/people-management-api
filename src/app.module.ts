@@ -7,6 +7,7 @@ import { EmployeeModule } from './modules/employee/employee.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
 import { BiometricModule } from './modules/biometric/biometric.module';
 import { VacationModule } from './modules/vacation/vacation.module';
+import { UserModule } from './modules/user/user.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { VacationModule } from './modules/vacation/vacation.module';
     AttendanceModule,
     BiometricModule,
     VacationModule,
+    UserModule,
   ],
   controllers: [AppController],
   providers: [AppService],

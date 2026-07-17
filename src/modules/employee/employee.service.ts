@@ -8,7 +8,6 @@ import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { EmployeeQueryDto } from './dto/employee-query.dto';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
-import { PaginationQueryDto } from '../../commons/dto/pagination.dto';
 import { CreateFileDto } from './dto/file/create-file.dto';
 
 @Injectable()
@@ -22,20 +21,10 @@ export class EmployeeService {
     try {
       await this.dataSource.query(
         `INSERT INTO GP_COLABORADORES (
-          NOME, BI, NIF, TELEFONE, TELEFONE_ALTERNATIVO,
-          PROVINCIA, MUNICIPIO, MORADA, EMAIL,
-          BANCO, IBAN, TITULAR_CONTA, MOEDA, ESTADO
-        ) VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9, :10, :11, :12, :13, :14)`,
+          CODIGO_USUARIO, BANCO, IBAN, TITULAR_CONTA, MOEDA, ESTADO
+        ) VALUES (:1, :2, :3, :4, :5, :6)`,
         [
-          createPersonDto.name,
-          createPersonDto.bi,
-          createPersonDto.nif,
-          createPersonDto.phone,
-          createPersonDto.alternativePhone,
-          createPersonDto.province,
-          createPersonDto.municipality,
-          createPersonDto.address,
-          createPersonDto.email,
+          createPersonDto.userId,
           createPersonDto.bank,
           createPersonDto.iban,
           createPersonDto.accountHolder,
@@ -52,40 +41,57 @@ export class EmployeeService {
     const values: any[] = [];
     let whereClause = '';
 
+    const conditions: string[] = [];
     if (query.bi) {
-      whereClause = 'WHERE BI = :1';
+      conditions.push(`U.BI = :${values.length + 1}`);
       values.push(query.bi);
+    }
+    if (query.name) {
+      conditions.push(`UPPER(U.NOME) LIKE :${values.length + 1}`);
+      values.push(`%${query.name.toUpperCase()}%`);
+    }
+    if (query.email) {
+      conditions.push(`U.EMAIL = :${values.length + 1}`);
+      values.push(query.email);
+    }
+
+    if (conditions.length > 0) {
+      whereClause = `WHERE ${conditions.join(' AND ')}`;
     }
 
     const placeholderOffset = values.length + 1;
     const placeholderLimit = values.length + 2;
 
     const data = await this.dataSource.query(
-      `SELECT CODIGO AS "id",
-                     NOME AS "name",
-                     BI AS "bi",
-                     NIF AS "nif",
-                     TELEFONE AS "phone",
-                     TELEFONE_ALTERNATIVO AS "alternativePhone",
-                     PROVINCIA AS "province",
-                     MUNICIPIO AS "municipality",
-                     MORADA AS "address",
-                     EMAIL AS "email",
-                     BANCO AS "bank",
-                     IBAN AS "iban",
-                     TITULAR_CONTA AS "accountHolder",
-                     MOEDA AS "currency",
-                     ESTADO AS "status",
-                     CRIADO_EM AS "createdAt"
-                FROM GP_COLABORADORES
+      `SELECT C.CODIGO AS "id",
+                     U.NOME AS "name",
+                     U.BI AS "bi",
+                     U.NIF AS "nif",
+                     U.TELEFONE AS "phone",
+                     U.TELEFONE_ALTERNATIVO AS "alternativePhone",
+                     U.PROVINCIA AS "province",
+                     U.MUNICIPIO AS "municipality",
+                     U.MORADA AS "address",
+                     U.EMAIL AS "email",
+                     C.BANCO AS "bank",
+                     C.IBAN AS "iban",
+                     C.TITULAR_CONTA AS "accountHolder",
+                     C.MOEDA AS "currency",
+                     C.ESTADO AS "status",
+                     C.CRIADO_EM AS "createdAt"
+                FROM GP_COLABORADORES C
+                JOIN GP_USUARIOS U ON C.CODIGO_USUARIO = U.CODIGO
                ${whereClause}
-               ORDER BY CODIGO DESC
+               ORDER BY C.CODIGO DESC
               OFFSET :${placeholderOffset} ROWS FETCH NEXT :${placeholderLimit} ROWS ONLY`,
       [...values, query.offset, query.limit],
     );
 
     const totalResult = await this.dataSource.query(
-      `SELECT COUNT(*) AS TOTAL FROM GP_COLABORADORES ${whereClause}`,
+      `SELECT COUNT(*) AS TOTAL 
+         FROM GP_COLABORADORES C
+         JOIN GP_USUARIOS U ON C.CODIGO_USUARIO = U.CODIGO
+        ${whereClause}`,
       values,
     );
 
@@ -104,37 +110,39 @@ export class EmployeeService {
 
   async findOne(id: number) {
     const result = await this.dataSource.query(
-      `SELECT CODIGO AS "id",
-            NOME AS "name",
-            BI AS "bi",
-            NIF AS "nif",
-            TELEFONE AS "phone",
-            TELEFONE_ALTERNATIVO AS "alternativePhone",
-            PROVINCIA AS "province",
-            MUNICIPIO AS "municipality",
-            MORADA AS "address",
-            EMAIL AS "email",
-            BANCO AS "bank",
-            IBAN AS "iban",
-            TITULAR_CONTA AS "accountHolder",
-            MOEDA AS "currency",
-            ESTADO AS "status",
-            CRIADO_EM AS "createdAt"
-       FROM GP_COLABORADORES
-      WHERE CODIGO = :1`,
+      `SELECT C.CODIGO AS "id",
+            U.NOME AS "name",
+            U.BI AS "bi",
+            U.NIF AS "nif",
+            U.TELEFONE AS "phone",
+            U.TELEFONE_ALTERNATIVO AS "alternativePhone",
+            U.PROVINCIA AS "province",
+            U.MUNICIPIO AS "municipality",
+            U.MORADA AS "address",
+            U.EMAIL AS "email",
+            C.BANCO AS "bank",
+            C.IBAN AS "iban",
+            C.TITULAR_CONTA AS "accountHolder",
+            C.MOEDA AS "currency",
+            C.ESTADO AS "status",
+            C.CRIADO_EM AS "createdAt",
+            C.CODIGO_USUARIO AS "userId"
+       FROM GP_COLABORADORES C
+       JOIN GP_USUARIOS U ON C.CODIGO_USUARIO = U.CODIGO
+      WHERE C.CODIGO = :1`,
       [id],
     );
 
     const employee = result[0] ?? null;
 
     if (employee) {
-      employee.files = await this.findFilesByEmployee(id);
+      employee.files = await this.findFilesByEmployee(employee.userId);
     }
 
     return employee;
   }
 
-  async findFilesByEmployee(employeeId: number) {
+  async findFilesByEmployee(userId: number) {
     return this.dataSource.query(
       `SELECT CODIGO AS "id",
               TIPO AS "type",
@@ -144,9 +152,9 @@ export class EmployeeService {
               ESTADO AS "status",
               CRIADO_EM AS "createdAt"
          FROM GP_ARQUIVOS
-        WHERE CODIGO_COLABORADOR = :1
+        WHERE CODIGO_USUARIO = :1
           AND ESTADO = 1`,
-      [employeeId],
+      [userId],
     );
   }
 
@@ -154,10 +162,10 @@ export class EmployeeService {
     try {
       await this.dataSource.query(
         `INSERT INTO GP_ARQUIVOS (
-          CODIGO_COLABORADOR, TIPO, NOME_ORIGINAL, CAMINHO, DESCRICAO
+          CODIGO_USUARIO, TIPO, NOME_ORIGINAL, CAMINHO, DESCRICAO
         ) VALUES (:1, :2, :3, :4, :5)`,
         [
-          createFileDto.employeeId,
+          createFileDto.userId,
           createFileDto.type,
           createFileDto.originalName,
           createFileDto.path,
@@ -183,48 +191,34 @@ export class EmployeeService {
       throw new BadRequestException('colaborador não encontrado');
     }
 
-    const fields: string[] = [];
-    const values: (string | number | null)[] = [];
-    let placeholderIndex = 1;
+    const collabFields: string[] = [];
+    const collabValues: any[] = [];
 
-    const mapping = {
-      name: 'NOME',
-      bi: 'BI',
-      nif: 'NIF',
-      phone: 'TELEFONE',
-      alternativePhone: 'TELEFONE_ALTERNATIVO',
-      province: 'PROVINCIA',
-      municipality: 'MUNICIPIO',
-      address: 'MORADA',
-      email: 'EMAIL',
+    const collabMapping = {
       bank: 'BANCO',
       iban: 'IBAN',
       accountHolder: 'TITULAR_CONTA',
       currency: 'MOEDA',
       status: 'ESTADO',
+      userId: 'CODIGO_USUARIO',
     };
 
-    for (const [key, column] of Object.entries(mapping)) {
+    for (const [key, column] of Object.entries(collabMapping)) {
       if (updatePersonDto[key] !== undefined) {
-        fields.push(`${column} = :${placeholderIndex++}`);
-        values.push(updatePersonDto[key]);
+        collabFields.push(`${column} = :${collabValues.length + 1}`);
+        collabValues.push(updatePersonDto[key]);
       }
     }
 
-    if (fields.length === 0) {
-      return person;
-    }
-
-    values.push(id);
-
-    const query = `
-      UPDATE GP_COLABORADORES
-      SET ${fields.join(', ')}
-      WHERE CODIGO = :${placeholderIndex}
-    `;
-
     try {
-      await this.dataSource.query(query, values);
+      if (collabFields.length > 0) {
+        collabValues.push(id);
+        await this.dataSource.query(
+          `UPDATE GP_COLABORADORES SET ${collabFields.join(', ')} WHERE CODIGO = :${collabValues.length}`,
+          collabValues,
+        );
+      }
+
       return this.findOne(id);
     } catch (error) {
       this.handleDatabaseError(error, 'atualizar');
@@ -232,24 +226,7 @@ export class EmployeeService {
   }
 
   private handleDatabaseError(error: any, action: string) {
-    if (error?.message?.includes('UK_GP_COLAB_BI')) {
-      throw new BadRequestException(
-        'Já existe um colaborador cadastrado com este BI',
-      );
-    }
-
-    if (error?.message?.includes('UK_GP_COLAB_NIF')) {
-      throw new BadRequestException(
-        'Já existe um colaborador cadastrado com este NIF',
-      );
-    }
-
-    if (error?.message?.includes('UK_GP_COLAB_EMAIL')) {
-      throw new BadRequestException(
-        'Já existe um colaborador cadastrado com este Email',
-      );
-    }
-
+    console.error(`Error to ${action} employee:`, error);
     throw new InternalServerErrorException(`Erro ao ${action} colaborador`);
   }
 }

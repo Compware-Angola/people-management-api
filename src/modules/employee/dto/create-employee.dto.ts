@@ -1,80 +1,17 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  IsEmail,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
-  Matches,
   MaxLength,
-  MinLength,
 } from 'class-validator';
 
 export class CreateEmployeeDto {
-  @ApiProperty({ example: 'João Silva' })
-  @IsString()
+  @ApiProperty({ example: 1, description: 'ID do usuário já cadastrado' })
+  @IsNumber()
   @IsNotEmpty()
-  @MinLength(3)
-  @MaxLength(150)
-  name: string;
-
-  @ApiProperty({
-    example: '003093887BE035',
-    description: 'Bilhete de Identidade',
-  })
-  @IsString()
-  @IsNotEmpty()
-  @MinLength(8)
-  @MaxLength(20)
-  @Matches(/^[A-Z0-9]+$/i, {
-    message: 'bi deve conter apenas letras e números',
-  })
-  bi: string;
-
-  @ApiPropertyOptional({
-    example: '5001234567',
-    description: 'Número de Identificação Fiscal',
-  })
-  @IsOptional()
-  @IsString()
-  @MaxLength(20)
-  nif?: string;
-
-  @ApiProperty({ example: '923123456' })
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(20)
-  phone: string;
-
-  @ApiPropertyOptional({ example: '912345678' })
-  @IsOptional()
-  @IsString()
-  @MaxLength(20)
-  alternativePhone?: string;
-
-  @ApiProperty({ example: 'Luanda' })
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(80)
-  province: string;
-
-  @ApiProperty({ example: 'Cazenga' })
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(80)
-  municipality: string;
-
-  @ApiProperty({ example: 'Rua 1, Casa 2' })
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(500)
-  address: string;
-
-  @ApiProperty({ example: 'joao@email.com' })
-  @IsEmail()
-  @IsNotEmpty()
-  @MaxLength(150)
-  email: string;
+  userId: number;
 
   @ApiProperty({ example: 'BFA' })
   @IsString()
