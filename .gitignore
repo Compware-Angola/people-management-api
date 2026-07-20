@@ -47,7 +47,7 @@ lerna-debug.log*
 .tmp
 
 # http
-.http
+*.http
 
 # Runtime data
 pids
