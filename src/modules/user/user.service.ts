@@ -9,7 +9,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { UserQueryDto } from './dto/user-query.dto';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
-import { ConfigService } from '@nestjs/config';
+import { EnvService } from 'src/modules/utils/env/env.service';
 
 @Injectable()
 export class UserService {
@@ -18,16 +18,13 @@ export class UserService {
   constructor(
     @InjectDataSource()
     private readonly dataSource: DataSource,
-    private readonly configService: ConfigService,
+    private readonly envService: EnvService,
   ) {
-    this.hashServiceUrl =
-      this.configService.get<string>('HASH_SERVICE_URL') || '';
+    this.hashServiceUrl = this.envService.get('HASH_SERVICE_URL') || '';
   }
 
   private async getHash(text: string): Promise<string> {
     try {
-      console.log(this.hashServiceUrl);
-      console.log(text);
       const response = await fetch(`${this.hashServiceUrl}/hash`, {
         method: 'POST',
         headers: {
@@ -52,13 +49,12 @@ export class UserService {
     const passwordHash = await this.getHash(createUserDto.bi);
 
     try {
-      const result = await this.dataSource.query(
+      await this.dataSource.query(
         `INSERT INTO GP_USUARIOS (
           NOME, BI, NIF, TELEFONE, TELEFONE_ALTERNATIVO,
           PROVINCIA, MUNICIPIO, MORADA, EMAIL,
           SENHA, PRECISA_MUDAR_SENHA, ESTADO
-        ) VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9, :10, :11, :12)
-        RETURNING CODIGO INTO :13`,
+        ) VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9, :10, :11, :12)`,
         [
           createUserDto.name,
           createUserDto.bi,
@@ -72,12 +68,10 @@ export class UserService {
           passwordHash,
           1, // PRECISA_MUDAR_SENHA
           createUserDto.status ?? 1,
-          { type: 'number', dir: 2 },
         ],
       );
 
-      const codigo = result?.outBinds?.[0] || result?.[0]?.CODIGO || result?.[0];
-      return { codigo };
+      return { message: 'Usuário cadastrado com sucesso' };
     } catch (error) {
       this.handleDatabaseError(error, 'cadastrar');
     }

@@ -7,7 +7,7 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { EnvService } from 'src/modules/utils/env/env.service';
 import axios, { AxiosInstance, isAxiosError } from 'axios';
 
 interface ValidateTokenResponse {
@@ -31,10 +31,10 @@ export class RemoteJwtAuthGuard implements CanActivate {
   private readonly http: AxiosInstance;
   private readonly authServiceUrl: string;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(private readonly envService: EnvService) {
     this.http = axios.create({ timeout: 8000 });
 
-    const baseUrl = this.configService.get<string>('HASH_SERVICE_URL');
+    const baseUrl = this.envService.get('HASH_SERVICE_URL');
     if (!baseUrl) {
       throw new Error('HASH_SERVICE_URL não configurada');
     }
@@ -68,6 +68,8 @@ export class RemoteJwtAuthGuard implements CanActivate {
 
   private async validateToken(token: string): Promise<DecodedUserPayload> {
     try {
+      console.log(`Validando token remotamente em ${this.authServiceUrl}`);
+
       const { data } = await this.http.get<ValidateTokenResponse>(
         this.authServiceUrl,
         { headers: { Authorization: `Bearer ${token}` } },
