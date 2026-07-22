@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import {
   IsEmail,
   IsNotEmpty,
@@ -8,7 +8,7 @@ import {
   Matches,
   MaxLength,
   MinLength,
-} from 'class-validator';
+} from 'class-validator'
 
 export class CreateEmployeeDto {
   @ApiProperty({ example: 'João Silva' })
@@ -16,7 +16,7 @@ export class CreateEmployeeDto {
   @IsNotEmpty()
   @MinLength(3)
   @MaxLength(150)
-  name: string;
+  name: string
 
   @ApiProperty({
     example: '003093887BE035',
@@ -29,7 +29,7 @@ export class CreateEmployeeDto {
   @Matches(/^[A-Z0-9]+$/i, {
     message: 'bi deve conter apenas letras e números',
   })
-  bi: string;
+  bi: string
 
   @ApiPropertyOptional({
     example: '5001234567',
@@ -38,70 +38,70 @@ export class CreateEmployeeDto {
   @IsOptional()
   @IsString()
   @MaxLength(20)
-  nif?: string;
+  nif?: string
 
   @ApiProperty({ example: '923123456' })
   @IsString()
   @IsNotEmpty()
   @MaxLength(20)
-  phone: string;
+  phone: string
 
   @ApiPropertyOptional({ example: '912345678' })
   @IsOptional()
   @IsString()
   @MaxLength(20)
-  alternativePhone?: string;
+  alternativePhone?: string
 
   @ApiProperty({ example: 'Luanda' })
   @IsString()
   @IsNotEmpty()
   @MaxLength(80)
-  province: string;
+  province: string
 
   @ApiProperty({ example: 'Cazenga' })
   @IsString()
   @IsNotEmpty()
   @MaxLength(80)
-  municipality: string;
+  municipality: string
 
   @ApiProperty({ example: 'Rua 1, Casa 2' })
   @IsString()
   @IsNotEmpty()
   @MaxLength(500)
-  address: string;
+  address: string
 
   @ApiProperty({ example: 'joao@email.com' })
   @IsEmail()
   @IsNotEmpty()
   @MaxLength(150)
-  email: string;
+  email: string
 
   @ApiProperty({ example: 'BFA' })
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)
-  bank: string;
+  bank: string
 
   @ApiProperty({ example: 'AO06000000000000000000000' })
   @IsString()
   @IsNotEmpty()
   @MaxLength(34)
-  iban: string;
+  iban: string
 
   @ApiProperty({ example: 'João Silva' })
   @IsString()
   @IsNotEmpty()
   @MaxLength(150)
-  accountHolder: string;
+  accountHolder: string
 
   @ApiProperty({ example: 'AOA' })
   @IsString()
   @IsNotEmpty()
   @MaxLength(30)
-  currency: string;
+  currency: string
 
   @ApiPropertyOptional({ example: 1, description: '0 = INATIVO, 1 = ATIVO' })
   @IsOptional()
   @IsNumber()
-  status?: number;
+  status?: number
 }

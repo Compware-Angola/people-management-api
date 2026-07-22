@@ -2,14 +2,14 @@ import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
-} from '@nestjs/common';
-import { CreateEmployeeDto } from './dto/create-employee.dto';
-import { UpdateEmployeeDto } from './dto/update-employee.dto';
-import { EmployeeQueryDto } from './dto/employee-query.dto';
-import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
-import { PaginationQueryDto } from '../../commons/dto/pagination.dto';
-import { CreateFileDto } from './dto/file/create-file.dto';
+} from '@nestjs/common'
+import { CreateEmployeeDto } from './dto/create-employee.dto'
+import { UpdateEmployeeDto } from './dto/update-employee.dto'
+import { EmployeeQueryDto } from './dto/employee-query.dto'
+import { InjectDataSource } from '@nestjs/typeorm'
+import { DataSource } from 'typeorm'
+import { PaginationQueryDto } from '../../common/dto/pagination.dto'
+import { CreateFileDto } from './dto/file/create-file.dto'
 
 @Injectable()
 export class EmployeeService {
@@ -42,23 +42,23 @@ export class EmployeeService {
           createPersonDto.currency,
           createPersonDto.status ?? 1,
         ],
-      );
+      )
     } catch (error) {
-      this.handleDatabaseError(error, 'cadastrar');
+      this.handleDatabaseError(error, 'cadastrar')
     }
   }
 
   async findAll(query: EmployeeQueryDto) {
-    const values: any[] = [];
-    let whereClause = '';
+    const values: any[] = []
+    let whereClause = ''
 
     if (query.bi) {
-      whereClause = 'WHERE BI = :1';
-      values.push(query.bi);
+      whereClause = 'WHERE BI = :1'
+      values.push(query.bi)
     }
 
-    const placeholderOffset = values.length + 1;
-    const placeholderLimit = values.length + 2;
+    const placeholderOffset = values.length + 1
+    const placeholderLimit = values.length + 2
 
     const data = await this.dataSource.query(
       `SELECT CODIGO AS "id",
@@ -82,14 +82,14 @@ export class EmployeeService {
                ORDER BY CODIGO DESC
               OFFSET :${placeholderOffset} ROWS FETCH NEXT :${placeholderLimit} ROWS ONLY`,
       [...values, query.offset, query.limit],
-    );
+    )
 
     const totalResult = await this.dataSource.query(
       `SELECT COUNT(*) AS TOTAL FROM GP_COLABORADORES ${whereClause}`,
       values,
-    );
+    )
 
-    const total = Number(totalResult[0]?.TOTAL ?? 0);
+    const total = Number(totalResult[0]?.TOTAL ?? 0)
 
     return {
       data,
@@ -99,7 +99,7 @@ export class EmployeeService {
         total,
         totalPages: Math.ceil(total / query.limit),
       },
-    };
+    }
   }
 
   async findOne(id: number) {
@@ -123,15 +123,15 @@ export class EmployeeService {
        FROM GP_COLABORADORES
       WHERE CODIGO = :1`,
       [id],
-    );
+    )
 
-    const employee = result[0] ?? null;
+    const employee = result[0] ?? null
 
     if (employee) {
-      employee.files = await this.findFilesByEmployee(id);
+      employee.files = await this.findFilesByEmployee(id)
     }
 
-    return employee;
+    return employee
   }
 
   async findFilesByEmployee(employeeId: number) {
@@ -147,7 +147,7 @@ export class EmployeeService {
         WHERE CODIGO_COLABORADOR = :1
           AND ESTADO = 1`,
       [employeeId],
-    );
+    )
   }
 
   async addFile(createFileDto: CreateFileDto) {
@@ -163,9 +163,9 @@ export class EmployeeService {
           createFileDto.path,
           createFileDto.description,
         ],
-      );
+      )
     } catch (error) {
-      throw new InternalServerErrorException('Erro ao salvar arquivo');
+      throw new InternalServerErrorException('Erro ao salvar arquivo')
     }
   }
 
@@ -173,19 +173,19 @@ export class EmployeeService {
     await this.dataSource.query(
       `UPDATE GP_ARQUIVOS SET ESTADO = 0 WHERE CODIGO = :1`,
       [id],
-    );
+    )
   }
 
   async update(id: number, updatePersonDto: UpdateEmployeeDto) {
-    const person = await this.findOne(id);
+    const person = await this.findOne(id)
 
     if (!person) {
-      throw new BadRequestException('colaborador não encontrado');
+      throw new BadRequestException('colaborador não encontrado')
     }
 
-    const fields: string[] = [];
-    const values: (string | number | null)[] = [];
-    let placeholderIndex = 1;
+    const fields: string[] = []
+    const values: (string | number | null)[] = []
+    let placeholderIndex = 1
 
     const mapping = {
       name: 'NOME',
@@ -202,32 +202,32 @@ export class EmployeeService {
       accountHolder: 'TITULAR_CONTA',
       currency: 'MOEDA',
       status: 'ESTADO',
-    };
+    }
 
     for (const [key, column] of Object.entries(mapping)) {
       if (updatePersonDto[key] !== undefined) {
-        fields.push(`${column} = :${placeholderIndex++}`);
-        values.push(updatePersonDto[key]);
+        fields.push(`${column} = :${placeholderIndex++}`)
+        values.push(updatePersonDto[key])
       }
     }
 
     if (fields.length === 0) {
-      return person;
+      return person
     }
 
-    values.push(id);
+    values.push(id)
 
     const query = `
       UPDATE GP_COLABORADORES
       SET ${fields.join(', ')}
       WHERE CODIGO = :${placeholderIndex}
-    `;
+    `
 
     try {
-      await this.dataSource.query(query, values);
-      return this.findOne(id);
+      await this.dataSource.query(query, values)
+      return this.findOne(id)
     } catch (error) {
-      this.handleDatabaseError(error, 'atualizar');
+      this.handleDatabaseError(error, 'atualizar')
     }
   }
 
@@ -235,21 +235,21 @@ export class EmployeeService {
     if (error?.message?.includes('UK_GP_COLAB_BI')) {
       throw new BadRequestException(
         'Já existe um colaborador cadastrado com este BI',
-      );
+      )
     }
 
     if (error?.message?.includes('UK_GP_COLAB_NIF')) {
       throw new BadRequestException(
         'Já existe um colaborador cadastrado com este NIF',
-      );
+      )
     }
 
     if (error?.message?.includes('UK_GP_COLAB_EMAIL')) {
       throw new BadRequestException(
         'Já existe um colaborador cadastrado com este Email',
-      );
+      )
     }
 
-    throw new InternalServerErrorException(`Erro ao ${action} colaborador`);
+    throw new InternalServerErrorException(`Erro ao ${action} colaborador`)
   }
 }

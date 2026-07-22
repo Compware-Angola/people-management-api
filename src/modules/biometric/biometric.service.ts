@@ -1,10 +1,14 @@
-import { Injectable, InternalServerErrorException, BadRequestException } from '@nestjs/common';
-import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
-import { CreateEquipmentDto } from './dto/equipment/create-equipment.dto';
-import { UpdateEquipmentDto } from './dto/equipment/update-equipment.dto';
-import { CreateBiometricIntegrationDto } from './dto/integration/create-biometric-integration.dto';
-import { PaginationQueryDto } from '../../commons/dto/pagination.dto';
+import {
+  Injectable,
+  InternalServerErrorException,
+  BadRequestException,
+} from '@nestjs/common'
+import { InjectDataSource } from '@nestjs/typeorm'
+import { DataSource } from 'typeorm'
+import { CreateEquipmentDto } from './dto/equipment/create-equipment.dto'
+import { UpdateEquipmentDto } from './dto/equipment/update-equipment.dto'
+import { CreateBiometricIntegrationDto } from './dto/integration/create-biometric-integration.dto'
+import { PaginationQueryDto } from '../../common/dto/pagination.dto'
 
 @Injectable()
 export class BiometricService {
@@ -22,9 +26,9 @@ export class BiometricService {
           NOME, LOCALIZACAO, MODELO, ESTADO
         ) VALUES (:1, :2, :3, :4)`,
         [dto.name, dto.location, dto.model, dto.status ?? 1],
-      );
+      )
     } catch (error) {
-      throw new InternalServerErrorException('Erro ao cadastrar equipamento');
+      throw new InternalServerErrorException('Erro ao cadastrar equipamento')
     }
   }
 
@@ -40,13 +44,13 @@ export class BiometricService {
         ORDER BY CODIGO DESC
        OFFSET :1 ROWS FETCH NEXT :2 ROWS ONLY`,
       [query.offset, query.limit],
-    );
+    )
 
     const totalResult = await this.dataSource.query(
       `SELECT COUNT(*) AS TOTAL FROM GP_EQUIPAMENTOS`,
-    );
+    )
 
-    const total = Number(totalResult[0]?.TOTAL ?? 0);
+    const total = Number(totalResult[0]?.TOTAL ?? 0)
 
     return {
       data,
@@ -56,7 +60,7 @@ export class BiometricService {
         total,
         totalPages: Math.ceil(total / query.limit),
       },
-    };
+    }
   }
 
   async findOneEquipment(id: number) {
@@ -70,44 +74,44 @@ export class BiometricService {
          FROM GP_EQUIPAMENTOS
         WHERE CODIGO = :1`,
       [id],
-    );
-    return result[0] ?? null;
+    )
+    return result[0] ?? null
   }
 
   async updateEquipment(id: number, dto: UpdateEquipmentDto) {
-    const equipment = await this.findOneEquipment(id);
+    const equipment = await this.findOneEquipment(id)
     if (!equipment) {
-      throw new BadRequestException('Equipamento não encontrado');
+      throw new BadRequestException('Equipamento não encontrado')
     }
 
-    const fields: string[] = [];
-    const values: any[] = [];
-    let placeholderIndex = 1;
+    const fields: string[] = []
+    const values: any[] = []
+    let placeholderIndex = 1
 
     const mapping = {
       name: 'NOME',
       location: 'LOCALIZACAO',
       model: 'MODELO',
       status: 'ESTADO',
-    };
+    }
 
     for (const [key, column] of Object.entries(mapping)) {
       if (dto[key] !== undefined) {
-        fields.push(`${column} = :${placeholderIndex++}`);
-        values.push(dto[key]);
+        fields.push(`${column} = :${placeholderIndex++}`)
+        values.push(dto[key])
       }
     }
 
-    if (fields.length === 0) return equipment;
+    if (fields.length === 0) return equipment
 
-    values.push(id);
-    const query = `UPDATE GP_EQUIPAMENTOS SET ${fields.join(', ')} WHERE CODIGO = :${placeholderIndex}`;
+    values.push(id)
+    const query = `UPDATE GP_EQUIPAMENTOS SET ${fields.join(', ')} WHERE CODIGO = :${placeholderIndex}`
 
     try {
-      await this.dataSource.query(query, values);
-      return this.findOneEquipment(id);
+      await this.dataSource.query(query, values)
+      return this.findOneEquipment(id)
     } catch (error) {
-      throw new InternalServerErrorException('Erro ao atualizar equipamento');
+      throw new InternalServerErrorException('Erro ao atualizar equipamento')
     }
   }
 
@@ -120,9 +124,11 @@ export class BiometricService {
           CODIGO_COLABORADOR, CODIGO_EQUIPAMENTO, EVENTO, ESTADO
         ) VALUES (:1, :2, :3, :4)`,
         [dto.employeeId, dto.equipmentId, dto.event, dto.status ?? 1],
-      );
+      )
     } catch (error) {
-      throw new InternalServerErrorException('Erro ao registrar integração biométrica');
+      throw new InternalServerErrorException(
+        'Erro ao registrar integração biométrica',
+      )
     }
   }
 
@@ -142,13 +148,13 @@ export class BiometricService {
         ORDER BY I.CODIGO DESC
        OFFSET :1 ROWS FETCH NEXT :2 ROWS ONLY`,
       [query.offset, query.limit],
-    );
+    )
 
     const totalResult = await this.dataSource.query(
       `SELECT COUNT(*) AS TOTAL FROM GP_INTEGRACOES_BIOMETRICAS`,
-    );
+    )
 
-    const total = Number(totalResult[0]?.TOTAL ?? 0);
+    const total = Number(totalResult[0]?.TOTAL ?? 0)
 
     return {
       data,
@@ -158,7 +164,7 @@ export class BiometricService {
         total,
         totalPages: Math.ceil(total / query.limit),
       },
-    };
+    }
   }
 
   async findIntegrationsByEmployee(employeeId: number) {
@@ -174,6 +180,6 @@ export class BiometricService {
         WHERE I.CODIGO_COLABORADOR = :1
         ORDER BY I.CODIGO DESC`,
       [employeeId],
-    );
+    )
   }
 }

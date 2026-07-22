@@ -2,12 +2,12 @@ import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
-} from '@nestjs/common';
-import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
-import { CreateAttendanceDto } from './dto/create-attendance.dto';
-import { UpdateAttendanceDto } from './dto/update-attendance.dto';
-import { PaginationQueryDto } from '../../commons/dto/pagination.dto';
+} from '@nestjs/common'
+import { InjectDataSource } from '@nestjs/typeorm'
+import { DataSource } from 'typeorm'
+import { CreateAttendanceDto } from './dto/create-attendance.dto'
+import { UpdateAttendanceDto } from './dto/update-attendance.dto'
+import { PaginationQueryDto } from '../../common/dto/pagination.dto'
 
 @Injectable()
 export class AttendanceService {
@@ -25,13 +25,15 @@ export class AttendanceService {
         [
           createAttendanceDto.employeeId,
           createAttendanceDto.startDate,
-          createAttendanceDto.endDate ? new Date(createAttendanceDto.endDate) : null,
+          createAttendanceDto.endDate
+            ? new Date(createAttendanceDto.endDate)
+            : null,
           createAttendanceDto.hours ?? null,
           createAttendanceDto.situation,
         ],
-      );
+      )
     } catch (error) {
-      this.handleDatabaseError(error, 'cadastrar');
+      this.handleDatabaseError(error, 'cadastrar')
     }
   }
 
@@ -48,13 +50,13 @@ export class AttendanceService {
         ORDER BY CODIGO DESC
        OFFSET :1 ROWS FETCH NEXT :2 ROWS ONLY`,
       [query.offset, query.limit],
-    );
+    )
 
     const totalResult = await this.dataSource.query(
       `SELECT COUNT(*) AS TOTAL FROM GP_ASSIDUIDADES`,
-    );
+    )
 
-    const total = Number(totalResult[0]?.TOTAL ?? 0);
+    const total = Number(totalResult[0]?.TOTAL ?? 0)
 
     return {
       data,
@@ -64,7 +66,7 @@ export class AttendanceService {
         total,
         totalPages: Math.ceil(total / query.limit),
       },
-    };
+    }
   }
 
   async findOne(id: number) {
@@ -79,9 +81,9 @@ export class AttendanceService {
          FROM GP_ASSIDUIDADES
         WHERE CODIGO = :1`,
       [id],
-    );
+    )
 
-    return result[0] ?? null;
+    return result[0] ?? null
   }
 
   async findByEmployee(employeeId: number, query: PaginationQueryDto) {
@@ -98,14 +100,14 @@ export class AttendanceService {
         ORDER BY DATA_INICIO DESC
        OFFSET :2 ROWS FETCH NEXT :3 ROWS ONLY`,
       [employeeId, query.offset, query.limit],
-    );
+    )
 
     const totalResult = await this.dataSource.query(
       `SELECT COUNT(*) AS TOTAL FROM GP_ASSIDUIDADES WHERE CODIGO_COLABORADOR = :1`,
       [employeeId],
-    );
+    )
 
-    const total = Number(totalResult[0]?.TOTAL ?? 0);
+    const total = Number(totalResult[0]?.TOTAL ?? 0)
 
     return {
       data,
@@ -115,19 +117,19 @@ export class AttendanceService {
         total,
         totalPages: Math.ceil(total / query.limit),
       },
-    };
+    }
   }
 
   async update(id: number, updateAttendanceDto: UpdateAttendanceDto) {
-    const attendance = await this.findOne(id);
+    const attendance = await this.findOne(id)
 
     if (!attendance) {
-      throw new BadRequestException('Assiduidade não encontrada');
+      throw new BadRequestException('Assiduidade não encontrada')
     }
 
-    const fields: string[] = [];
-    const values: any[] = [];
-    let placeholderIndex = 1;
+    const fields: string[] = []
+    const values: any[] = []
+    let placeholderIndex = 1
 
     const mapping = {
       employeeId: 'CODIGO_COLABORADOR',
@@ -135,37 +137,39 @@ export class AttendanceService {
       endDate: 'DATA_FIM',
       hours: 'HORAS',
       situation: 'SITUACAO',
-    };
+    }
 
     for (const [key, column] of Object.entries(mapping)) {
       if (updateAttendanceDto[key] !== undefined) {
         if (key === 'startDate' || key === 'endDate') {
-          fields.push(`${column} = TO_DATE(:${placeholderIndex++}, 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`);
-          values.push(updateAttendanceDto[key]);
+          fields.push(
+            `${column} = TO_DATE(:${placeholderIndex++}, 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`,
+          )
+          values.push(updateAttendanceDto[key])
         } else {
-          fields.push(`${column} = :${placeholderIndex++}`);
-          values.push(updateAttendanceDto[key]);
+          fields.push(`${column} = :${placeholderIndex++}`)
+          values.push(updateAttendanceDto[key])
         }
       }
     }
 
     if (fields.length === 0) {
-      return attendance;
+      return attendance
     }
 
-    values.push(id);
+    values.push(id)
 
     const query = `
       UPDATE GP_ASSIDUIDADES
       SET ${fields.join(', ')}
       WHERE CODIGO = :${placeholderIndex}
-    `;
+    `
 
     try {
-      await this.dataSource.query(query, values);
-      return this.findOne(id);
+      await this.dataSource.query(query, values)
+      return this.findOne(id)
     } catch (error) {
-      this.handleDatabaseError(error, 'atualizar');
+      this.handleDatabaseError(error, 'atualizar')
     }
   }
 
@@ -173,18 +177,18 @@ export class AttendanceService {
     await this.dataSource.query(
       `DELETE FROM GP_ASSIDUIDADES WHERE CODIGO = :1`,
       [id],
-    );
+    )
   }
 
   private handleDatabaseError(error: any, action: string) {
     if (error?.message?.includes('FK_GP_ASSIDUIDADES_COLAB')) {
-      throw new BadRequestException('Colaborador informado não existe');
+      throw new BadRequestException('Colaborador informado não existe')
     }
 
     if (error?.message?.includes('CK_GP_ASSIDUIDADES_SIT')) {
-      throw new BadRequestException('Situação informada é inválida');
+      throw new BadRequestException('Situação informada é inválida')
     }
 
-    throw new InternalServerErrorException(`Erro ao ${action} assiduidade`);
+    throw new InternalServerErrorException(`Erro ao ${action} assiduidade`)
   }
 }

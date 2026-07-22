@@ -1,28 +1,28 @@
-import { Module, Global } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { plainToInstance } from 'class-transformer';
-import { validateSync } from 'class-validator';
+import { Module, Global } from '@nestjs/common'
+import { ConfigModule } from '@nestjs/config'
+import { plainToInstance } from 'class-transformer'
+import { validateSync } from 'class-validator'
 
-import { getEnvFilePath } from './env.loader';
-import { EnvService } from './env.service';
-import { EnvValidation } from './env.validation';
+import { getEnvFilePath } from './env.loader'
+import { EnvService } from './env.service'
+import { EnvValidation } from './env.validation'
 
 export function validateEnv(config: Record<string, any>): Record<string, any> {
   const env = plainToInstance(EnvValidation, config, {
     enableImplicitConversion: true,
-  });
+  })
 
-  const errors = validateSync(env, { skipMissingProperties: false });
+  const errors = validateSync(env, { skipMissingProperties: false })
 
   if (errors.length > 0) {
     throw new Error(
       `❌ Environment validation failed:\n${errors
         .map((e) => JSON.stringify(e.constraints))
         .join('\n')}`,
-    );
+    )
   }
 
-  return env;
+  return env
 }
 @Global()
 @Module({
@@ -37,4 +37,4 @@ export function validateEnv(config: Record<string, any>): Record<string, any> {
   providers: [EnvService],
   exports: [EnvService],
 })
-export class EnvModule { }
+export class EnvModule {}

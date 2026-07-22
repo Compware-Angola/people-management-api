@@ -1,6 +1,6 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString } from 'class-validator';
-import { PaginationQueryDto } from '../../../commons/dto/pagination.dto';
+import { ApiPropertyOptional } from '@nestjs/swagger'
+import { IsOptional, IsString } from 'class-validator'
+import { PaginationQueryDto } from '../../../common/dto/pagination.dto'
 
 export class EmployeeQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional({
@@ -9,5 +9,5 @@ export class EmployeeQueryDto extends PaginationQueryDto {
   })
   @IsOptional()
   @IsString()
-  bi?: string;
+  bi?: string
 }

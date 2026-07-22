@@ -1,16 +1,16 @@
-import path from 'node:path';
-import { DataSourceOptions } from 'typeorm';
-import { env } from './env/env.config';
+import path from 'node:path'
+import { DataSourceOptions } from 'typeorm'
+import { env } from './env/env.config'
 
-const isDevelopment = env.NODE_ENV === 'development';
-const isTest = env.NODE_ENV === 'test';
+const isDevelopment = env.NODE_ENV === 'development'
+const isTest = env.NODE_ENV === 'test'
 
-const rootDir = process.cwd();
-const isTsNode = __filename.endsWith('.ts');
+const rootDir = process.cwd()
+const isTsNode = __filename.endsWith('.ts')
 
-const baseDir = isTsNode ? 'src' : 'dist';
-const extension = isTsNode ? 'ts' : 'js';
-const isSSL = env.DB_SSL === 'true';
+const baseDir = isTsNode ? 'src' : 'dist'
+const extension = isTsNode ? 'ts' : 'js'
+const isSSL = env.DB_SSL === 'true'
 
 export const typeOrmConfig: DataSourceOptions = {
   type: 'oracle',
@@ -34,15 +34,12 @@ export const typeOrmConfig: DataSourceOptions = {
 
   useUTC: true,
 
-
   host: env.DB_HOST,
   port: env.DB_PORT,
   username: env.DB_USERNAME,
   password: env.DB_PASSWORD,
-  // sid: env.DB_SID,
+  sid: env.DB_SID ?? undefined,
   serviceName: env.DB_SERVICE,
-
-
 
   extra: {
     poolMin: 5,
@@ -55,4 +52,4 @@ export const typeOrmConfig: DataSourceOptions = {
     connectTimeout: 15000,
     ...(isSSL ? { ssl: { rejectUnauthorized: true } } : {}),
   },
-};
+}

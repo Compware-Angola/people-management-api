@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import {
   IsDateString,
   IsEnum,
@@ -8,7 +8,7 @@ import {
   IsPositive,
   Max,
   Min,
-} from 'class-validator';
+} from 'class-validator'
 
 export enum AttendanceSituation {
   PRESENTE = 'PRESENTE',
@@ -23,24 +23,30 @@ export class CreateAttendanceDto {
   @IsNumber()
   @IsNotEmpty()
   @IsPositive()
-  employeeId: number;
+  employeeId: number
 
-  @ApiProperty({ example: '2026-07-09T08:00:00Z', description: 'Data de início' })
+  @ApiProperty({
+    example: '2026-07-09T08:00:00Z',
+    description: 'Data de início',
+  })
   @IsDateString()
   @IsNotEmpty()
-  startDate: string;
+  startDate: string
 
-  @ApiPropertyOptional({ example: '2026-07-09T17:00:00Z', description: 'Data de fim' })
+  @ApiPropertyOptional({
+    example: '2026-07-09T17:00:00Z',
+    description: 'Data de fim',
+  })
   @IsDateString()
   @IsOptional()
-  endDate?: string;
+  endDate?: string
 
   @ApiPropertyOptional({ example: 8.5, description: 'Horas trabalhadas' })
   @IsNumber({ maxDecimalPlaces: 2 })
   @IsOptional()
   @Min(0)
   @Max(999.99)
-  hours?: number;
+  hours?: number
 
   @ApiProperty({
     example: 'PRESENTE',
@@ -49,5 +55,5 @@ export class CreateAttendanceDto {
   })
   @IsEnum(AttendanceSituation)
   @IsNotEmpty()
-  situation: AttendanceSituation;
+  situation: AttendanceSituation
 }
