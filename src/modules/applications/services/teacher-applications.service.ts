@@ -125,7 +125,6 @@ export class TeacherApplicationsService {
         createdAt: new Date(),
       })
       savedPerson = await personRepository.save(person)
-
       await userRepository.save({
         name: personal.fullName,
         email: personal.email,

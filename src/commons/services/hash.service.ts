@@ -30,4 +30,26 @@ export class HashService {
       throw new InternalServerErrorException('Erro ao gerar hash da senha');
     }
   }
+
+  async verify(text: string, hash: string): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.hashServiceUrl}/verify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ texto: text, hash }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Hash service returned ${response.status}`);
+      }
+
+      const data = await response.json();
+      return Boolean(data.match ?? data.valid ?? data.isValid);
+    } catch (error) {
+      console.error('Error calling hash verify service:', error);
+      throw new InternalServerErrorException('Erro ao verificar a senha');
+    }
+  }
 }
