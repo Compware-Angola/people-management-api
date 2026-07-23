@@ -17,15 +17,15 @@ export class ExperienceItemDto {
   @Transform(({ value }) => value?.trim())
   @IsString()
   @MinLength(2)
-  declare area: string
+  declare course: string
 
   @ApiProperty({
-    example: 'Professor',
+    example: 'Base de dados',
   })
   @Transform(({ value }) => value?.trim())
   @IsString()
   @MinLength(2)
-  declare role: string
+  declare discipline: string
 
   @ApiProperty({
     example: '2020-01-01',

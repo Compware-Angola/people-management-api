@@ -6,6 +6,8 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { PersonEntity } from 'src/modules/person/entity/person.entity'
 import { DataSource, Repository } from 'typeorm'
 import { CandidateEntity } from '../entity/candidate.entity'
+import { AcademicEducationEntity } from '../entity/academic-education.entity'
+import { TeachingExperienceEntity } from '../entity/teaching-experience.entity'
 
 @Injectable()
 export class TeacherApplicationsService {
@@ -15,18 +17,27 @@ export class TeacherApplicationsService {
     @InjectRepository(PersonEntity)
     private readonly personRepository: Repository<PersonEntity>,
     @InjectRepository(CandidateEntity)
-    private readonly candidateRepository,
+    private readonly candidateRepository: Repository<CandidateEntity>,
+    @InjectRepository(AcademicEducationEntity)
+    private readonly academicEducationEntity: Repository<AcademicEducationEntity>,
+    @InjectRepository(TeachingExperienceEntity)
+    private readonly teachingExperienceEntity: Repository<TeachingExperienceEntity>,
   ) {}
 
   async create(payload: CreateApplicationPayload) {
     const { personal, academic, experience, files } = payload
 
-    const [personByEmail, personByDocumentNumber, documentType] =
+    const [personByEmail, personByDocumentNumber, personByPhone, documentType] =
       await Promise.all([
         this.findPersonByEmail(personal.email),
         this.findPersonByDocumentNumber(personal.documentNumber),
+        this.findPersonByPhone(
+          personal.phone,
+          personal.alternativePhone ?? null,
+        ),
         this.documentType(personal.documentType),
       ])
+
     if (personByEmail) {
       throw new ConflictException(
         'O endereço de e-mail informado já está associado a um candidato cadastrado.',
@@ -37,50 +48,96 @@ export class TeacherApplicationsService {
         `O número de ${documentType ?? 'documento'} informado já está associado a um candidato cadastrado.`,
       )
     }
+    if (personByPhone) {
+      throw new ConflictException(
+        'O número de telefone informado já está associado a um candidato cadastrado.',
+      )
+    }
+
+    // Também não pode haver duplicidade entre o próprio telefone e o telefone alternativo informados no payload
+    if (
+      personal.alternativePhone &&
+      personal.alternativePhone === personal.phone
+    ) {
+      throw new ConflictException(
+        'O telefone alternativo não pode ser igual ao telefone principal.',
+      )
+    }
+
+    let savedPerson!: PersonEntity
+    let savedCandidate!: CandidateEntity
 
     await this.datasource.transaction(async (manager) => {
       const personRepository = manager.getRepository(PersonEntity)
       const candidateRepository = manager.getRepository(CandidateEntity)
-      try {
-        // done
-        const persson = personRepository.create({
-          nationalityId: personal.nationality,
-          email: personal.email,
-          alternativePhone: personal.alternativePhone ?? null,
-          fullName: personal.fullName,
-          address: personal.address,
-          genderId: personal.gender,
-          documentNumber: personal.documentNumber,
-          documentTypeId: personal.documentType,
-          maritalStatusId: personal.maritalStatus,
-          phone: personal.phone,
-          documentExpirationDate: personal.documentExpiration,
-          activeState: 1,
-          birthDate: personal.birthDate,
-          createdAt: new Date(),
-        })
-        const candidate = candidateRepository.create({
-          applicationDate: new Date(),
-          person: JSON.stringify({
-            pk_pessoa: persson.id,
-            nome_completo: persson.fullName,
-          }),
-          applicationStatusId: 8,
-        })
-        console.log(persson, candidate)
-      } catch (error) {
-        console.log(error)
+      const academicEducationEntity = manager.getRepository(
+        AcademicEducationEntity,
+      )
+      const teachingExperienceEntity = manager.getRepository(
+        TeachingExperienceEntity,
+      )
+
+      // Etapa 1: criar pessoa
+      const person = personRepository.create({
+        nationalityId: personal.nationality,
+        email: personal.email,
+        alternativePhone: personal.alternativePhone ?? null,
+        fullName: personal.fullName,
+        address: personal.address,
+        genderId: personal.gender,
+        documentNumber: personal.documentNumber,
+        documentTypeId: personal.documentType,
+        maritalStatusId: personal.maritalStatus,
+        phone: personal.phone,
+        documentExpirationDate: personal.documentExpiration,
+        activeState: 1,
+        birthDate: personal.birthDate,
+        createdAt: new Date(),
+      })
+      savedPerson = await personRepository.save(person)
+
+      // Etapa 2: criar candidatura
+      const candidate = candidateRepository.create({
+        applicationDate: new Date(),
+        person: JSON.stringify({
+          pk_pessoa: savedPerson.id,
+          nome_completo: savedPerson.fullName,
+        }),
+        applicationStatusId: 8,
+        academicDegreeId: academic[0].academicLevel,
+      })
+      savedCandidate = await candidateRepository.save(candidate)
+
+      // Etapa 3: salvar formações
+      const academicEntities = academic.map((item) =>
+        academicEducationEntity.create({
+          graduationYear: Number(item.completionYear),
+          candidateId: savedCandidate.id,
+          academicDegreeId: item.academicLevel,
+          institution: item.institution,
+          courseTrainingAreaId: item.course,
+        }),
+      )
+      if (academicEntities.length) {
+        await academicEducationEntity.save(academicEntities)
       }
-      // Etapa 1
-      // criar pessoa
-      // Etapa 2
-      // criar candidatura
-      // Etapa 3
-      // salvar formações
-      // Etapa 4
-      // salvar experiências
-      // Etapa 5
-      // enviar arquivos
+
+      // Etapa 4: salvar experiências
+      const experienceEntities = experience.map((item) =>
+        teachingExperienceEntity.create({
+          candidateId: savedCandidate.id,
+          endYear: item.endYear,
+          startYear: item.startYear,
+          institution: item.institution,
+          discipline: item.discipline,
+          course: item.course,
+        }),
+      )
+      if (experienceEntities.length) {
+        await teachingExperienceEntity.save(experienceEntities)
+      }
+
+      // Etapa 5: enviar arquivos (fora da transação, ver abaixo)
     })
 
     const cvUrl = this.storageService.upload(files.cv)
@@ -107,6 +164,30 @@ export class TeacherApplicationsService {
     return this.personRepository.findOne({
       where: { documentNumber },
     })
+  }
+
+  /**
+   * Verifica se o telefone principal ou o telefone alternativo informados
+   * já estão em uso (em qualquer um dos dois campos) por outra pessoa.
+   */
+  private async findPersonByPhone(
+    phone: string,
+    alternativePhone: string | null,
+  ): Promise<PersonEntity | null> {
+    const query = this.personRepository
+      .createQueryBuilder('person')
+      .where('person.phone = :phone', { phone })
+      .orWhere('person.alternativePhone = :phone', { phone })
+
+    if (alternativePhone) {
+      query
+        .orWhere('person.phone = :alternativePhone', { alternativePhone })
+        .orWhere('person.alternativePhone = :alternativePhone', {
+          alternativePhone,
+        })
+    }
+
+    return query.getOne()
   }
 
   private async documentType(id: number): Promise<string | null> {
