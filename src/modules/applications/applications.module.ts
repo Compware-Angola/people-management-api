@@ -8,6 +8,8 @@ import { CandidateEntity } from './entity/candidate.entity'
 import { AcademicEducationEntity } from './entity/academic-education.entity'
 import { TeachingExperienceEntity } from './entity/teaching-experience.entity'
 import { TeacherApplicationDocument } from './entity/teacher-application-document.entity'
+import { HashService } from 'src/commons/services/hash.service'
+import { User } from '../user/entities/user.entity'
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -17,9 +19,10 @@ import { TeacherApplicationDocument } from './entity/teacher-application-documen
       AcademicEducationEntity,
       TeachingExperienceEntity,
       TeacherApplicationDocument,
+      User
     ]),
   ],
   controllers: [ApplicationsController],
-  providers: [StorageService, TeacherApplicationsService],
+  providers: [StorageService, HashService, TeacherApplicationsService],
 })
 export class ApplicationsModule {}
