@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger'
 import { IsOptional, IsNumber, IsString } from 'class-validator'
 import { Type } from 'class-transformer'
-import { PaginationQueryDto } from '../../../common/dto/pagination.dto'
+import { PaginationQueryDto } from '../../../commons/dto/pagination.dto'
 
 export class VacationQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional({ description: 'Filtrar por código do colaborador' })

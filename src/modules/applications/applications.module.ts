@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
 import { ApplicationsController } from './controllers/teacher-applications.controller'
-import { StorageService } from 'src/common/services/storage.service'
+import { StorageService } from 'src/commons/services/storage.service'
 import { TeacherApplicationsService } from './services/teacher-applications.service'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { PersonEntity } from './entity/person.entity'

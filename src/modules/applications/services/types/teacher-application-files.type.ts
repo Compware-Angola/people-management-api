@@ -1,4 +1,4 @@
-import { ApplicationFile } from '../../../../common/types/application-file.type'
+import { ApplicationFile } from '../../../../commons/types/application-file.type'
 
 export interface TeacherApplicationFiles {
   identificationDocument: ApplicationFile

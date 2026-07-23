@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { ConflictException, Injectable } from '@nestjs/common'
 import { CreateApplicationPayload } from './types/create-application-payload.type'
-import { StorageService } from '../../../common/services/storage.service'
+import { StorageService } from '../../../commons/services/storage.service'
 import { InjectRepository } from '@nestjs/typeorm'
 import { PersonEntity } from 'src/modules/applications/entity/person.entity'
 import { DataSource, Repository } from 'typeorm'
@@ -9,7 +9,7 @@ import { CandidateEntity } from '../entity/candidate.entity'
 import { AcademicEducationEntity } from '../entity/academic-education.entity'
 import { TeachingExperienceEntity } from '../entity/teaching-experience.entity'
 import { TeacherApplicationDocument } from '../entity/teacher-application-document.entity'
-import { ApplicationFile } from '../../../common/types/application-file.type'
+import { ApplicationFile } from '../../../commons/types/application-file.type'
 
 export enum TipoDocumentoNecessario {
   BI = 1,

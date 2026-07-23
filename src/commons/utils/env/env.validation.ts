@@ -4,7 +4,6 @@ import {
   IsNumber,
   IsOptional,
   IsString,
-  IsUrl,
   IsEnum,
 } from 'class-validator'
 
@@ -42,6 +41,6 @@ export class EnvValidation {
   @IsBooleanString()
   DB_SSL?: string = 'false'
 
-  // @IsString()
-  // JWT_SECRET: string;
+  @IsString()
+  HASH_SERVICE_URL: string;
 }

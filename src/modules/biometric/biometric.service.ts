@@ -8,7 +8,7 @@ import { DataSource } from 'typeorm'
 import { CreateEquipmentDto } from './dto/equipment/create-equipment.dto'
 import { UpdateEquipmentDto } from './dto/equipment/update-equipment.dto'
 import { CreateBiometricIntegrationDto } from './dto/integration/create-biometric-integration.dto'
-import { PaginationQueryDto } from '../../common/dto/pagination.dto'
+import { PaginationQueryDto } from '../../commons/dto/pagination.dto'
 
 @Injectable()
 export class BiometricService {

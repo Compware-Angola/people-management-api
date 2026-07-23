@@ -14,7 +14,7 @@ import { ApiTags, ApiOperation } from '@nestjs/swagger'
 import { AttendanceService } from './attendance.service'
 import { CreateAttendanceDto } from './dto/create-attendance.dto'
 import { UpdateAttendanceDto } from './dto/update-attendance.dto'
-import { PaginationQueryDto } from '../../common/dto/pagination.dto'
+import { PaginationQueryDto } from '../../commons/dto/pagination.dto'
 
 @ApiTags('Attendance')
 @Controller('attendance')

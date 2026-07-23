@@ -10,7 +10,7 @@ import { ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { FileFieldsInterceptor } from '@nestjs/platform-express'
 import { TeacherApplicationsService } from '../services/teacher-applications.service'
 import { CreateApplicationDto } from '../dto/create-application.dto'
-import { mapMulterFile } from 'src/common/utils/multer-file.mapper'
+import { mapMulterFile } from 'src/commons/utils/multer-file.mapper'
 
 @ApiTags('Applications')
 @Controller('applications')

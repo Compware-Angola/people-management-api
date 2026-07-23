@@ -14,7 +14,7 @@ import { CreateEquipmentDto } from './dto/equipment/create-equipment.dto'
 import { UpdateEquipmentDto } from './dto/equipment/update-equipment.dto'
 import { CreateBiometricIntegrationDto } from './dto/integration/create-biometric-integration.dto'
 import { ApiTags, ApiOperation } from '@nestjs/swagger'
-import { PaginationQueryDto } from '../../common/dto/pagination.dto'
+import { PaginationQueryDto } from '../../commons/dto/pagination.dto'
 
 @Controller('biometrics')
 @ApiTags('Biometrics')

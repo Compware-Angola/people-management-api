@@ -9,52 +9,66 @@ import {
   HttpStatus,
   Query,
   Delete,
-} from '@nestjs/common'
-import { EmployeeService } from './employee.service'
-import { CreateEmployeeDto } from './dto/create-employee.dto'
-import { UpdateEmployeeDto } from './dto/update-employee.dto'
-import { EmployeeQueryDto } from './dto/employee-query.dto'
-import { ApiTags, ApiOperation } from '@nestjs/swagger'
-import { CreateFileDto } from './dto/file/create-file.dto'
+  UseGuards,
+} from '@nestjs/common';
+import { EmployeeService } from './employee.service';
+import { CreateEmployeeDto } from './dto/create-employee.dto';
+import { UpdateEmployeeDto } from './dto/update-employee.dto';
+import { EmployeeQueryDto } from './dto/employee-query.dto';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { CreateFileDto } from './dto/file/create-file.dto';
+import { RemoteJwtAuthGuard } from '../../commons/guards/remote-jwt-auth.guard';
+import { PermissionsGuard } from '../../commons/guards/permissions.guard';
+import { Permissions } from '../../commons/decorators/permissions.decorator';
 
 @Controller('employees')
 @ApiTags('Employees')
+@ApiBearerAuth()
+@UseGuards(RemoteJwtAuthGuard, PermissionsGuard)
 export class EmployeeController {
   constructor(private readonly employeeService: EmployeeService) {}
 
   @Post()
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.CREATED)
+  @Permissions('write:employees')
+  @ApiOperation({ summary: 'Criar um novo colaborador' })
   async create(@Body() createEmployeeDto: CreateEmployeeDto) {
-    await this.employeeService.create(createEmployeeDto)
+    return this.employeeService.create(createEmployeeDto);
   }
 
   @Get()
   @ApiOperation({ summary: 'Listar todos os colaboradores' })
+  @Permissions('read:employees')
   findAll(@Query() query: EmployeeQueryDto) {
     return this.employeeService.findAll(query)
   }
 
   @Get(':id')
+  @Permissions('read:employees')
+  @ApiOperation({ summary: 'Buscar um colaborador pelo ID' })
   findOne(@Param('id') id: string) {
     return this.employeeService.findOne(+id)
   }
 
   @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateEmployeeDto: UpdateEmployeeDto,
-  ) {
-    return this.employeeService.update(+id, updateEmployeeDto)
+  @Permissions('write:employees')
+  @ApiOperation({ summary: 'Atualizar um colaborador' })
+  update(@Param('id') id: string, @Body() updateEmployeeDto: UpdateEmployeeDto) {
+    return this.employeeService.update(+id, updateEmployeeDto);
   }
 
   @Post('files')
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.CREATED)
+  @Permissions('write:employees')
+  @ApiOperation({ summary: 'Adicionar arquivo ao colaborador' })
   async addFile(@Body() createFileDto: CreateFileDto) {
-    await this.employeeService.addFile(createFileDto)
+    return this.employeeService.addFile(createFileDto);
   }
 
   @Delete('files/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @Permissions('write:employees')
+  @ApiOperation({ summary: 'Remover arquivo do colaborador' })
   async removeFile(@Param('id') id: string) {
     await this.employeeService.removeFile(+id)
   }

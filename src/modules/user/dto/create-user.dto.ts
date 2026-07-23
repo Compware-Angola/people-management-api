@@ -1,69 +1,63 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import {
-  IsEmail,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  Length,
-} from 'class-validator'
+import { IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString, MaxLength } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateUserDto {
-  @ApiProperty({
-    example: 'Domingos Canhanga',
-    description: 'User full name',
-  })
+  @ApiProperty()
   @IsString()
   @IsNotEmpty()
-  @Length(3, 150)
-  declare name: string
+  @MaxLength(150)
+  name: string;
 
-  @ApiProperty({
-    example: '123456789LA045',
-    description: 'Identity card number',
-  })
+  @ApiProperty()
   @IsString()
   @IsNotEmpty()
-  @Length(5, 20)
-  declare bi: string
+  @MaxLength(20)
+  bi: string;
 
-  @ApiProperty({
-    example: '+244923000000',
-  })
+  @ApiPropertyOptional()
   @IsString()
-  @IsNotEmpty()
-  declare phone: string
-
-  @ApiPropertyOptional({
-    example: '+244924000000',
-  })
   @IsOptional()
-  @IsString()
-  alternativePhone?: string
+  @MaxLength(20)
+  nif?: string;
 
-  @ApiProperty({
-    example: 'Luanda',
-  })
+  @ApiProperty()
   @IsString()
   @IsNotEmpty()
-  declare province: string
+  @MaxLength(20)
+  phone: string;
 
-  @ApiProperty({
-    example: 'Cazenga',
-  })
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  @MaxLength(20)
+  alternativePhone?: string;
+
+  @ApiProperty()
   @IsString()
   @IsNotEmpty()
-  declare municipality: string
+  @MaxLength(80)
+  province: string;
 
-  @ApiProperty({
-    example: 'Rua Principal Nº 10',
-  })
+  @ApiProperty()
   @IsString()
   @IsNotEmpty()
-  declare address: string
+  @MaxLength(80)
+  municipality: string;
 
-  @ApiProperty({
-    example: 'domingos@email.com',
-  })
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(500)
+  address: string;
+
+  @ApiProperty()
   @IsEmail()
-  declare email: string
+  @IsNotEmpty()
+  @MaxLength(150)
+  email: string;
+
+  @ApiPropertyOptional()
+  @IsNumber()
+  @IsOptional()
+  status?: number;
 }
