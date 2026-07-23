@@ -14,10 +14,10 @@ export enum FileType {
 }
 
 export class CreateFileDto {
-  @ApiProperty({ example: 1, description: 'ID do usu[ario' })
+  @ApiProperty({ example: 1, description: 'ID do colaborador' })
   @IsNumber()
   @IsNotEmpty()
-  userId: number;
+  employeeId: number;
 
   @ApiProperty({ enum: FileType, example: 'BI' })
   @IsEnum(FileType)
