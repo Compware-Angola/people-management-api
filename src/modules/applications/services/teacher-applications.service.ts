@@ -8,6 +8,32 @@ import { DataSource, Repository } from 'typeorm'
 import { CandidateEntity } from '../entity/candidate.entity'
 import { AcademicEducationEntity } from '../entity/academic-education.entity'
 import { TeachingExperienceEntity } from '../entity/teaching-experience.entity'
+import { TeacherApplicationDocument } from '../entity/teacher-application-document.entity'
+import { ApplicationFile } from '../../../common/types/application-file.type'
+
+export enum TipoDocumentoNecessario {
+  BI = 1,
+  CERTIFICADO = 2,
+  FOTOGRAFIAS = 3,
+  CEDULA_PROFISSIONAL = 4,
+  DECLARACAO_DE_TEMPO_DE_SERVICO = 5,
+  DECLARACAO_DE_AUTORIZACAO = 6,
+  CERTIDAO_MILITAR_REGULARIZADO = 7,
+  REGISTRO_CRIMINAL = 8,
+  TALAO_DE_RECENSEAMENTO_MILITAR = 9,
+  ATESTADO_MEDICO = 10,
+  DECLARACAO_INAARES = 11,
+  DECLARACAO_FORMACAO_PEDAGOGICA = 12,
+  CURRICULUM_VITAE = 13,
+  CONTA_BANCARIA = 14,
+  CARTA_DE_APRESENTACAO = 15,
+  COMPROVATIVO_BANCARIO = 16,
+  PROJECTO_DE_INVESTIGACAO_CIENTIFICA = 17,
+  DECLARACAO_DE_PROFICIENCIA_EM_INGLES = 18,
+}
+
+
+
 
 @Injectable()
 export class TeacherApplicationsService {
@@ -22,6 +48,8 @@ export class TeacherApplicationsService {
     private readonly academicEducationEntity: Repository<AcademicEducationEntity>,
     @InjectRepository(TeachingExperienceEntity)
     private readonly teachingExperienceEntity: Repository<TeachingExperienceEntity>,
+    @InjectRepository(TeacherApplicationDocument)
+    private readonly teacherApplicationDocumentRepository: Repository<TeacherApplicationDocument>,
   ) {}
 
   async create(payload: CreateApplicationPayload) {
@@ -54,7 +82,6 @@ export class TeacherApplicationsService {
       )
     }
 
-    // Também não pode haver duplicidade entre o próprio telefone e o telefone alternativo informados no payload
     if (
       personal.alternativePhone &&
       personal.alternativePhone === personal.phone
@@ -77,7 +104,6 @@ export class TeacherApplicationsService {
         TeachingExperienceEntity,
       )
 
-      // Etapa 1: criar pessoa
       const person = personRepository.create({
         nationalityId: personal.nationality,
         email: personal.email,
@@ -96,7 +122,6 @@ export class TeacherApplicationsService {
       })
       savedPerson = await personRepository.save(person)
 
-      // Etapa 2: criar candidatura
       const candidate = candidateRepository.create({
         applicationDate: new Date(),
         person: JSON.stringify({
@@ -108,7 +133,6 @@ export class TeacherApplicationsService {
       })
       savedCandidate = await candidateRepository.save(candidate)
 
-      // Etapa 3: salvar formações
       const academicEntities = academic.map((item) =>
         academicEducationEntity.create({
           graduationYear: Number(item.completionYear),
@@ -122,7 +146,6 @@ export class TeacherApplicationsService {
         await academicEducationEntity.save(academicEntities)
       }
 
-      // Etapa 4: salvar experiências
       const experienceEntities = experience.map((item) =>
         teachingExperienceEntity.create({
           candidateId: savedCandidate.id,
@@ -136,20 +159,58 @@ export class TeacherApplicationsService {
       if (experienceEntities.length) {
         await teachingExperienceEntity.save(experienceEntities)
       }
+    })
+await Promise.all([
+  this.uploadAndSaveDocument(
+    savedCandidate.id,
+    personal.documentType,
+    files.identificationDocument,
+  ),
+  this.uploadAndSaveDocument(
+    savedCandidate.id,
+    TipoDocumentoNecessario.CURRICULUM_VITAE,
+    files.cv,
+  ),
+  this.uploadAndSaveDocument(
+    savedCandidate.id,
+    TipoDocumentoNecessario.CERTIFICADO,
+    files.courseCertificate,
+  ),
+  this.uploadAndSaveDocument(
+    savedCandidate.id,
+    TipoDocumentoNecessario.DECLARACAO_FORMACAO_PEDAGOGICA,
+    files.pedagogicalAggregation,
+  ),
+  ...files.certificates.map((certificate) =>
+    this.uploadAndSaveDocument(
+      savedCandidate.id,
+      TipoDocumentoNecessario.CERTIFICADO,
+      certificate,
+    ),
+  ),
+])
 
-      // Etapa 5: enviar arquivos (fora da transação, ver abaixo)
+    return {message: 'Candidatura criada com sucesso'}
+
+  }
+
+  private async uploadAndSaveDocument(
+    candidateId: number,
+    documentTypeId: TipoDocumentoNecessario,
+    file: ApplicationFile,
+  ) {
+    const uploadResult = await this.storageService.upload(file)
+
+    const document = this.teacherApplicationDocumentRepository.create({
+      candidateId: candidateId,
+      documentTypeId,
+      fileName: uploadResult.file.filename,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     })
 
-    const cvUrl = this.storageService.upload(files.cv)
-
-    return {
-      personal,
-      academic,
-      experience,
-      documents: {
-        cv: cvUrl,
-      },
-    }
+    await this.teacherApplicationDocumentRepository.save(document)
+    return { name: uploadResult.file.filename }
   }
 
   private async findPersonByEmail(email: string): Promise<PersonEntity | null> {
@@ -166,10 +227,6 @@ export class TeacherApplicationsService {
     })
   }
 
-  /**
-   * Verifica se o telefone principal ou o telefone alternativo informados
-   * já estão em uso (em qualquer um dos dois campos) por outra pessoa.
-   */
   private async findPersonByPhone(
     phone: string,
     alternativePhone: string | null,

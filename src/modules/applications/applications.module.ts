@@ -7,7 +7,7 @@ import { PersonEntity } from '../person/entity/person.entity'
 import { CandidateEntity } from './entity/candidate.entity'
 import { AcademicEducationEntity } from './entity/academic-education.entity'
 import { TeachingExperienceEntity } from './entity/teaching-experience.entity'
-
+import { TeacherApplicationDocument } from './entity/teacher-application-document.entity'
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -16,6 +16,7 @@ import { TeachingExperienceEntity } from './entity/teaching-experience.entity'
       AcademicEducationEntity,
       AcademicEducationEntity,
       TeachingExperienceEntity,
+      TeacherApplicationDocument,
     ]),
   ],
   controllers: [ApplicationsController],
