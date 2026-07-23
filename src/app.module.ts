@@ -6,6 +6,8 @@ import { EmployeeModule } from './modules/employee/employee.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
 import { BiometricModule } from './modules/biometric/biometric.module';
 import { VacationModule } from './modules/vacation/vacation.module';
+import { UserModule } from './modules/user/user.module';
+import { PermissionsModule } from './modules/permissions/permissions.module';
 
 @Module({
   imports: [
@@ -15,6 +17,8 @@ import { VacationModule } from './modules/vacation/vacation.module';
     AttendanceModule,
     BiometricModule,
     VacationModule,
+    UserModule,
+    PermissionsModule,
   ],
 })
-export class AppModule { }
+export class AppModule {}
