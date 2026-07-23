@@ -8,8 +8,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 import { UpdateAttendanceDto } from './dto/update-attendance.dto';
-import { PaginationQueryDto } from '../../commons/dto/pagination.dto';
 import { Attendance } from './entities/attendance.entity';
+import { PaginationQueryDto } from 'src/commons/dto/pagination.dto';
 
 @Injectable()
 export class AttendanceService {
@@ -32,7 +32,7 @@ export class AttendanceService {
 
       await this.attendanceRepository.save(attendance);
     } catch (error) {
-      this.handleDatabaseError(error, 'cadastrar');
+      this.handleDatabaseError(error, 'cadastrar')
     }
   }
 
@@ -51,7 +51,7 @@ export class AttendanceService {
         total,
         totalPages: Math.ceil(total / query.limit),
       },
-    };
+    }
   }
 
   async findOne(id: number) {
@@ -80,11 +80,11 @@ export class AttendanceService {
         total,
         totalPages: Math.ceil(total / query.limit),
       },
-    };
+    }
   }
 
   async update(id: number, updateAttendanceDto: UpdateAttendanceDto) {
-    const attendance = await this.findOne(id);
+    const attendance = await this.findOne(id)
 
     const updatedAttendance = this.attendanceRepository.merge(attendance, {
       ...updateAttendanceDto,
@@ -100,7 +100,7 @@ export class AttendanceService {
       await this.attendanceRepository.save(updatedAttendance);
       return updatedAttendance;
     } catch (error) {
-      this.handleDatabaseError(error, 'atualizar');
+      this.handleDatabaseError(error, 'atualizar')
     }
   }
 
@@ -120,6 +120,6 @@ export class AttendanceService {
       throw new BadRequestException('Situação informada é inválida');
     }
 
-    throw new InternalServerErrorException(`Erro ao ${action} assiduidade`);
+    throw new InternalServerErrorException(`Erro ao ${action} assiduidade`)
   }
 }

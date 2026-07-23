@@ -40,14 +40,14 @@ export class EmployeeController {
   @ApiOperation({ summary: 'Listar todos os colaboradores' })
   @Permissions('read:employees')
   findAll(@Query() query: EmployeeQueryDto) {
-    return this.employeeService.findAll(query);
+    return this.employeeService.findAll(query)
   }
 
   @Get(':id')
   @Permissions('read:employees')
   @ApiOperation({ summary: 'Buscar um colaborador pelo ID' })
   findOne(@Param('id') id: string) {
-    return this.employeeService.findOne(+id);
+    return this.employeeService.findOne(+id)
   }
 
   @Patch(':id')
@@ -70,6 +70,6 @@ export class EmployeeController {
   @Permissions('write:employees')
   @ApiOperation({ summary: 'Remover arquivo do colaborador' })
   async removeFile(@Param('id') id: string) {
-    await this.employeeService.removeFile(+id);
+    await this.employeeService.removeFile(+id)
   }
 }

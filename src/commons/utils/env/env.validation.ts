@@ -1,45 +1,45 @@
-import { Type } from 'class-transformer';
+import { Type } from 'class-transformer'
 import {
   IsBooleanString,
   IsNumber,
   IsOptional,
   IsString,
   IsEnum,
-} from 'class-validator';
+} from 'class-validator'
 
 export class EnvValidation {
   @IsEnum(['development', 'production', 'test', 'staging'])
-  NODE_ENV: 'development' | 'production' | 'test' | 'staging' = 'development';
+  NODE_ENV: 'development' | 'production' | 'test' | 'staging' = 'development'
 
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
-  PORT: number = 3000;
+  PORT: number = 3000
 
   @IsString()
-  DB_HOST: string;
+  DB_HOST: string
 
   @Type(() => Number)
   @IsNumber()
-  DB_PORT: number;
+  DB_PORT: number
 
   @IsString()
-  DB_USERNAME: string;
+  DB_USERNAME: string
 
   @IsString()
-  DB_PASSWORD: string;
-
-  @IsOptional()
-  @IsString()
-  DB_SERVICE?: string;
+  DB_PASSWORD: string
 
   @IsOptional()
   @IsString()
-  DB_SID?: string;
+  DB_SERVICE?: string
+
+  @IsOptional()
+  @IsString()
+  DB_SID?: string
 
   @IsOptional()
   @IsBooleanString()
-  DB_SSL?: string = 'false';
+  DB_SSL?: string = 'false'
 
   @IsString()
   HASH_SERVICE_URL: string;

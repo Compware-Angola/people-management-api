@@ -9,7 +9,8 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { UserQueryDto } from './dto/user-query.dto';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
-import { EnvService } from 'src/modules/utils/env/env.service';
+import { EnvService } from 'src/commons/utils/env/env.service';
+
 
 @Injectable()
 export class UserService {

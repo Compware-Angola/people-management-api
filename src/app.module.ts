@@ -1,13 +1,14 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { EnvModule } from './modules/utils/env/env.module';
-import { databaseConfig } from './modules/utils/database-config';
+import { EnvModule } from './commons/utils/env/env.module';
+import { databaseConfig } from './commons/utils/database-config';
 import { EmployeeModule } from './modules/employee/employee.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
 import { BiometricModule } from './modules/biometric/biometric.module';
 import { VacationModule } from './modules/vacation/vacation.module';
 import { UserModule } from './modules/user/user.module';
 import { PermissionsModule } from './modules/permissions/permissions.module';
+import { ApplicationsModule } from './modules/applications/applications.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { PermissionsModule } from './modules/permissions/permissions.module';
     VacationModule,
     UserModule,
     PermissionsModule,
+    ApplicationsModule
   ],
 })
 export class AppModule {}

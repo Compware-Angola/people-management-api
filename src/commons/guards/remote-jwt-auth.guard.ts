@@ -7,8 +7,9 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { EnvService } from 'src/modules/utils/env/env.service';
+
 import axios, { AxiosInstance, isAxiosError } from 'axios';
+import { EnvService } from '../utils/env/env.service';
 
 interface ValidateTokenResponse {
   valid: boolean;

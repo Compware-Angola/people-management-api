@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import {
   IsNotEmpty,
   IsNumber,
@@ -17,28 +17,28 @@ export class CreateEmployeeDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)
-  bank: string;
+  bank: string
 
   @ApiProperty({ example: 'AO06000000000000000000000' })
   @IsString()
   @IsNotEmpty()
   @MaxLength(34)
-  iban: string;
+  iban: string
 
   @ApiProperty({ example: 'João Silva' })
   @IsString()
   @IsNotEmpty()
   @MaxLength(150)
-  accountHolder: string;
+  accountHolder: string
 
   @ApiProperty({ example: 'AOA' })
   @IsString()
   @IsNotEmpty()
   @MaxLength(30)
-  currency: string;
+  currency: string
 
   @ApiPropertyOptional({ example: 1, description: '0 = INATIVO, 1 = ATIVO' })
   @IsOptional()
   @IsNumber()
-  status?: number;
+  status?: number
 }
