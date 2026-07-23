@@ -205,11 +205,7 @@ await Promise.all([
     ),
   ),
 ])
-
-
-
     return {message: 'Candidatura criada com sucesso'}
-
   }
 
   private async uploadAndSaveDocument(
