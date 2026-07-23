@@ -3,7 +3,6 @@ import { DataSourceOptions } from 'typeorm';
 import { env } from './env/env.config';
 
 const isDevelopment = env.NODE_ENV === 'development';
-const isTest = env.NODE_ENV === 'test';
 
 const rootDir = process.cwd();
 const isTsNode = __filename.endsWith('.ts');
@@ -34,15 +33,12 @@ export const typeOrmConfig: DataSourceOptions = {
 
   useUTC: true,
 
-
   host: env.DB_HOST,
   port: env.DB_PORT,
   username: env.DB_USERNAME,
   password: env.DB_PASSWORD,
-  // sid: env.DB_SID,
+  sid: env.DB_SID,
   serviceName: env.DB_SERVICE,
-
-
 
   extra: {
     poolMin: 5,

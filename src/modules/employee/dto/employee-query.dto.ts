@@ -10,4 +10,20 @@ export class EmployeeQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsString()
   bi?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filtrar pelo Nome',
+    example: 'João Silva',
+  })
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filtrar pelo E-mail',
+    example: 'joao@email.com',
+  })
+  @IsOptional()
+  @IsString()
+  email?: string;
 }
