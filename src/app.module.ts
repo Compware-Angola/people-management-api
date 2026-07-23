@@ -21,4 +21,4 @@ import { PermissionsModule } from './modules/permissions/permissions.module';
     PermissionsModule,
   ],
 })
-export class AppModule {}
+export class AppModule { }

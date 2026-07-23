@@ -1,0 +1,25 @@
+services:
+  oracle-db:
+    image: gvenzl/oracle-xe:21-slim
+    container_name: oracle-xe
+    ports:
+      - "1521:1521"
+      - "5500:5500"
+    environment:
+      - ORACLE_PASSWORD=oracle123
+      - ORACLE_DB=XE
+      - ORACLE_CHARACTERSET=AL32UTF8
+      - APP_USER=app_user
+      - APP_USER_PASSWORD=app123
+    volumes:
+      - oracle-data:/opt/oracle/oradata
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "sqlplus", "-s", "system/oracle123@XE", "select 1 from dual"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+volumes:
+  oracle-data:

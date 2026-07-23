@@ -37,4 +37,4 @@ export function validateEnv(config: Record<string, any>): Record<string, any> {
   providers: [EnvService],
   exports: [EnvService],
 })
-export class EnvModule {}
+export class EnvModule { }
