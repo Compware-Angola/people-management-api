@@ -43,11 +43,6 @@ export class TeacherApplicationsService {
     @InjectRepository(PersonEntity)
     private readonly personRepository: Repository<PersonEntity>,
     @InjectRepository(CandidateEntity)
-    private readonly candidateRepository: Repository<CandidateEntity>,
-    @InjectRepository(AcademicEducationEntity)
-    private readonly academicEducationEntity: Repository<AcademicEducationEntity>,
-    @InjectRepository(TeachingExperienceEntity)
-    private readonly teachingExperienceEntity: Repository<TeachingExperienceEntity>,
     @InjectRepository(TeacherApplicationDocument)
     private readonly teacherApplicationDocumentRepository: Repository<TeacherApplicationDocument>,
   ) {}
