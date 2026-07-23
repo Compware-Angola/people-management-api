@@ -3,7 +3,7 @@ import { ApplicationsController } from './controllers/teacher-applications.contr
 import { StorageService } from 'src/common/services/storage.service'
 import { TeacherApplicationsService } from './services/teacher-applications.service'
 import { TypeOrmModule } from '@nestjs/typeorm'
-import { PersonEntity } from '../person/entity/person.entity'
+import { PersonEntity } from './entity/person.entity'
 import { CandidateEntity } from './entity/candidate.entity'
 import { AcademicEducationEntity } from './entity/academic-education.entity'
 import { TeachingExperienceEntity } from './entity/teaching-experience.entity'

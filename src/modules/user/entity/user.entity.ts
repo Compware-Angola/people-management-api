@@ -13,42 +13,7 @@ export class UserEntity {
   })
   declare id: number
 
-  @Column({
-    name: 'NOME',
-    type: 'varchar2',
-    length: 150,
-  })
-  declare name: string
 
-  @Column({
-    name: 'BI',
-    type: 'varchar2',
-    length: 20,
-  })
-  declare bi: string
-
-  @Column({
-    name: 'NIF',
-    type: 'varchar2',
-    length: 20,
-    nullable: true,
-  })
-  nif?: string
-
-  @Column({
-    name: 'TELEFONE',
-    type: 'varchar2',
-    length: 20,
-  })
-  declare phone: string
-
-  @Column({
-    name: 'TELEFONE_ALTERNATIVO',
-    type: 'varchar2',
-    length: 20,
-    nullable: true,
-  })
-  alternativePhone?: string
 
   @Column({
     name: 'PROVINCIA',
