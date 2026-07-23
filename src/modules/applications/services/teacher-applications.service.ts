@@ -32,9 +32,6 @@ export enum TipoDocumentoNecessario {
   DECLARACAO_DE_PROFICIENCIA_EM_INGLES = 18,
 }
 
-
-
-
 @Injectable()
 export class TeacherApplicationsService {
   constructor(
