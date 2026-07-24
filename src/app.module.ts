@@ -9,6 +9,7 @@ import { VacationModule } from './modules/vacation/vacation.module';
 import { UserModule } from './modules/user/user.module';
 import { PermissionsModule } from './modules/permissions/permissions.module';
 import { ApplicationsModule } from './modules/applications/applications.module';
+import { LeavesModule } from './modules/leaves/leaves.module';
 
 @Module({
   imports: [
@@ -20,7 +21,8 @@ import { ApplicationsModule } from './modules/applications/applications.module';
     VacationModule,
     UserModule,
     PermissionsModule,
-    ApplicationsModule
+    ApplicationsModule,
+    LeavesModule,
   ],
 })
 export class AppModule {}
