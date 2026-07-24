@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { ConflictException, Injectable, InternalServerErrorException } from '@nestjs/common'
+import { ConflictException, ForbiddenException, Injectable, InternalServerErrorException } from '@nestjs/common'
 import { CreateApplicationPayload } from './types/create-application-payload.type'
 import { StorageService } from '../../../commons/services/storage.service'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -14,6 +14,8 @@ import { User } from 'src/modules/user/entities/user.entity'
 import { HashService } from 'src/commons/services/hash.service'
 import { ApplicationStatusEntity } from '../entity/application-status.entity'
 import { AcademicDegreeEntity } from '../entity/academic-degree.entity'
+import { UpdateAcademicEducationItemDto } from '../dto/update-academic-educations.dto'
+import { UpdateTeachingExperienceItemDto } from '../dto/update-teaching-experiences.dto'
 
 export enum TipoDocumentoNecessario {
   BI = 1,
@@ -61,64 +63,63 @@ export class TeacherApplicationsService {
   ) {}
 
   async create(payload: CreateApplicationPayload) {
-    const { personal, academic, experience, files } = payload
-    let hashPassword: string
-    try{
-      hashPassword = await this.hashService.hash(personal.documentNumber)
-    } catch(error) {
-      throw new InternalServerErrorException()
-    }
-    const [personByEmail, personByDocumentNumber, personByPhone, documentType, userByEmail, userByDocumentNumber] =
-      await Promise.all([
-        this.findPersonByEmail(personal.email),
-        this.findPersonByDocumentNumber(personal.documentNumber),
-        this.findPersonByPhone(
-          personal.phone,
-          personal.alternativePhone ?? null,
-        ),
-        this.documentType(personal.documentType),
-        this.findUserByEmail(personal.email),
-        this.findUserByDocumentNumber(personal.documentNumber)
-      ])
+  const { personal, academic, experience, files } = payload
 
-    if (personByEmail || userByEmail) {
-      throw new ConflictException(
-        'O endereço de e-mail informado já está associado a um candidato cadastrado.',
-      )
-    }
-    if (personByDocumentNumber || userByDocumentNumber) {
-      throw new ConflictException(
-        `O número de ${documentType ?? 'documento'} informado já está associado a um candidato cadastrado.`,
-      )
-    }
-    if (personByPhone) {
-      throw new ConflictException(
-        'O número de telefone informado já está associado a um candidato cadastrado.',
-      )
-    }
+  let hashPassword: string
+  try {
+    hashPassword = await this.hashService.hash(personal.documentNumber)
+  } catch (error) {
+    throw new InternalServerErrorException('Falha ao processar o cadastro.')
+  }
 
-    if (
-      personal.alternativePhone &&
-      personal.alternativePhone === personal.phone
-    ) {
-      throw new ConflictException(
-        'O telefone alternativo não pode ser igual ao telefone principal.',
-      )
-    }
+  const [
+    personByEmail,
+    personByDocumentNumber,
+    personByPhone,
+    documentType,
+    userByEmail,
+    userByDocumentNumber,
+  ] = await Promise.all([
+    this.findPersonByEmail(personal.email),
+    this.findPersonByDocumentNumber(personal.documentNumber),
+    this.findPersonByPhone(personal.phone, personal.alternativePhone ?? null),
+    this.documentType(personal.documentType),
+    this.findUserByEmail(personal.email),
+    this.findUserByDocumentNumber(personal.documentNumber),
+  ])
 
-    let savedPerson!: PersonEntity
-    let savedCandidate!: CandidateEntity
+  if (personByEmail || userByEmail) {
+    throw new ConflictException(
+      'O endereço de e-mail informado já está associado a um candidato cadastrado.',
+    )
+  }
+  if (personByDocumentNumber || userByDocumentNumber) {
+    throw new ConflictException(
+      `O número de ${documentType ?? 'documento'} informado já está associado a um candidato cadastrado.`,
+    )
+  }
+  if (personByPhone) {
+    throw new ConflictException(
+      'O número de telefone informado já está associado a um candidato cadastrado.',
+    )
+  }
+  if (personal.alternativePhone && personal.alternativePhone === personal.phone) {
+    throw new ConflictException(
+      'O telefone alternativo não pode ser igual ao telefone principal.',
+    )
+  }
 
-    await this.datasource.transaction(async (manager) => {
+  const uploadedFiles = await this.uploadAllApplicationFiles(personal, files)
+
+  try {
+    const savedCandidate = await this.datasource.transaction(async (manager) => {
       const personRepository = manager.getRepository(PersonEntity)
       const candidateRepository = manager.getRepository(CandidateEntity)
-      const academicEducationEntity = manager.getRepository(
-        AcademicEducationEntity,
-      )
-      const teachingExperienceEntity = manager.getRepository(
-        TeachingExperienceEntity,
-      )
+      const academicEducationEntity = manager.getRepository(AcademicEducationEntity)
+      const teachingExperienceEntity = manager.getRepository(TeachingExperienceEntity)
+      const documentRepository = manager.getRepository(TeacherApplicationDocument)
       const userRepository = manager.getRepository(User)
+
       const person = personRepository.create({
         nationalityId: personal.nationality,
         email: personal.email,
@@ -135,7 +136,8 @@ export class TeacherApplicationsService {
         birthDate: personal.birthDate,
         createdAt: new Date(),
       })
-      savedPerson = await personRepository.save(person)
+      const savedPerson = await personRepository.save(person)
+
       await userRepository.save({
         name: personal.fullName,
         email: personal.email,
@@ -144,10 +146,11 @@ export class TeacherApplicationsService {
         alternativePhone: personal.alternativePhone,
         address: personal.address,
         password: hashPassword,
-        province:"unknown",
-        district:"unknown",
-        municipality:"unknown"
+        province: 'unknown',
+        district: 'unknown',
+        municipality: 'unknown',
       })
+
       const candidate = candidateRepository.create({
         applicationDate: new Date(),
         person: JSON.stringify({
@@ -157,7 +160,7 @@ export class TeacherApplicationsService {
         applicationStatusId: 8,
         academicDegreeId: academic[0].academicLevel,
       })
-      savedCandidate = await candidateRepository.save(candidate)
+      const savedCandidate = await candidateRepository.save(candidate)
 
       const academicEntities = academic.map((item) =>
         academicEducationEntity.create({
@@ -185,38 +188,30 @@ export class TeacherApplicationsService {
       if (experienceEntities.length) {
         await teachingExperienceEntity.save(experienceEntities)
       }
+      const documentEntities = uploadedFiles.map((uploaded) =>
+        documentRepository.create({
+          candidateId: savedCandidate.id,
+          documentTypeId: uploaded.documentTypeId,
+          fileName: uploaded.fileName,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }),
+      )
+      await documentRepository.save(documentEntities)
+
+      return savedCandidate
     })
-await Promise.all([
-  this.uploadAndSaveDocument(
-    savedCandidate.id,
-    personal.documentType,
-    files.identificationDocument,
-  ),
-  this.uploadAndSaveDocument(
-    savedCandidate.id,
-    TipoDocumentoNecessario.CURRICULUM_VITAE,
-    files.cv,
-  ),
-  this.uploadAndSaveDocument(
-    savedCandidate.id,
-    TipoDocumentoNecessario.CERTIFICADO,
-    files.courseCertificate,
-  ),
-  this.uploadAndSaveDocument(
-    savedCandidate.id,
-    TipoDocumentoNecessario.DECLARACAO_FORMACAO_PEDAGOGICA,
-    files.pedagogicalAggregation,
-  ),
-  ...files.certificates.map((certificate) =>
-    this.uploadAndSaveDocument(
-      savedCandidate.id,
-      TipoDocumentoNecessario.CERTIFICADO,
-      certificate,
-    ),
-  ),
-])
-    return {message: 'Candidatura criada com sucesso'}
+
+    return { message: 'Candidatura criada com sucesso' }
+  } catch (error) {
+    // 3) Banco falhou depois dos uploads: limpa o storage pra não deixar lixo órfão.
+    // await this.cleanupUploadedFiles(uploadedFiles)
+    throw new InternalServerErrorException(
+      'Não foi possível concluir a candidatura. Tente novamente.',
+    )
   }
+}
+
 
 async myApplications(username: string) {
   const person = await this.personRepository.findOne({
@@ -288,6 +283,7 @@ async myApplications(username: string) {
 
   const result = candidates.map((candidate) => ({
     id: candidate.id,
+    applicationDate: candidate.applicationDate,
     person: {
       id: person.id,
       fullName: person.fullName,
@@ -322,7 +318,154 @@ async myApplications(username: string) {
   return result[0]
 }
 
-  private async uploadAndSaveDocument(
+async updateAcademicEducations(
+  username: string,
+  candidateId: number,
+  items: UpdateAcademicEducationItemDto[],
+) {
+  await this.assertCandidateBelongsToUser(username, candidateId)
+
+  await this.datasource.transaction(async (manager) => {
+    const repo = manager.getRepository(AcademicEducationEntity)
+
+    const existingIds = items
+      .filter((item): item is UpdateAcademicEducationItemDto & { id: number } =>
+        item.id != null,
+      )
+      .map((item) => item.id)
+
+    // remove registos que já não vieram na lista (foram apagados no front)
+    if (existingIds.length) {
+      await repo
+        .createQueryBuilder()
+        .delete()
+        .where('candidateId = :candidateId', { candidateId })
+        .andWhere('id NOT IN (:...ids)', { ids: existingIds })
+        .execute()
+    } else {
+      await repo.delete({ candidateId })
+    }
+
+    for (const item of items) {
+      if (item.id) {
+        await repo.update(
+          { id: item.id, candidateId },
+          {
+            courseTrainingAreaId: Number(item.course),
+            academicDegreeId: Number(item.academicLevel),
+            institution: item.institution,
+            graduationYear: Number(item.completionYear),
+          },
+        )
+      } else {
+        const entity = repo.create({
+          candidateId,
+          courseTrainingAreaId: Number(item.course),
+          academicDegreeId: Number(item.academicLevel),
+          institution: item.institution,
+          graduationYear: Number(item.completionYear),
+        })
+        await repo.save(entity)
+      }
+    }
+  })
+
+  return this.myApplications(username)
+}
+
+async updateTeachingExperiences(
+  username: string,
+  candidateId: number,
+  items: UpdateTeachingExperienceItemDto[],
+) {
+  await this.assertCandidateBelongsToUser(username, candidateId)
+
+  await this.datasource.transaction(async (manager) => {
+    const repo = manager.getRepository(TeachingExperienceEntity)
+
+    const existingIds = items
+      .filter((item): item is UpdateTeachingExperienceItemDto & { id: number } =>
+        item.id != null,
+      )
+      .map((item) => item.id)
+
+    if (existingIds.length) {
+      await repo
+        .createQueryBuilder()
+        .delete()
+        .where('candidateId = :candidateId', { candidateId })
+        .andWhere('id NOT IN (:...ids)', { ids: existingIds })
+        .execute()
+    } else {
+      await repo.delete({ candidateId })
+    }
+
+    for (const item of items) {
+      if (item.id) {
+        await repo.update(
+          { id: item.id, candidateId },
+          {
+            course: item.course,
+            institution: item.institution,
+            discipline: item.discipline,
+            startYear: item.startYear,
+            endYear: item.endYear,
+          },
+        )
+      } else {
+        const entity = repo.create({
+          candidateId,
+          course: item.course,
+          institution: item.institution,
+          discipline: item.discipline,
+          startYear: item.startYear,
+          endYear: item.endYear,
+        })
+        await repo.save(entity)
+      }
+    }
+  })
+
+  return this.myApplications(username)
+}
+
+async uploadDocument(
+  username: string,
+  candidateId: number,
+  documentTypeId: number,
+  file: ApplicationFile,
+) {
+  await this.assertCandidateBelongsToUser(username, candidateId)
+
+  const uploadResult = await this.storageService.upload(file)
+
+  const existing = await this.teacherApplicationDocumentRepository.findOne({
+    where: { candidateId, documentTypeId },
+  })
+
+  if (existing) {
+    await this.teacherApplicationDocumentRepository.update(
+      { id: existing.id },
+      {
+        fileName: uploadResult.file.filename,
+        updatedAt: new Date(),
+      },
+    )
+  } else {
+    const document = this.teacherApplicationDocumentRepository.create({
+      candidateId,
+      documentTypeId,
+      fileName: uploadResult.file.filename,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
+    await this.teacherApplicationDocumentRepository.save(document)
+  }
+
+  return this.myApplications(username)
+}
+
+private async uploadAndSaveDocument(
     candidateId: number,
     documentTypeId: TipoDocumentoNecessario,
     file: ApplicationFile,
@@ -399,4 +542,110 @@ async myApplications(username: string) {
       where: { bi },
     })
   }
+
+  private async assertCandidateBelongsToUser(
+  username: string,
+  candidateId: number,
+) {
+  const person = await this.personRepository.findOne({
+    where: { email: username },
+  })
+
+  if (!person) {
+    throw new ForbiddenException('Utilizador não encontrado.')
+  }
+
+  const candidate = await this.candidateRepository
+    .createQueryBuilder('candidate')
+    .where('candidate.id = :candidateId', { candidateId })
+    .andWhere(
+      `JSON_EXISTS(candidate.person, '$?(@.pk_pessoa == $personId)' PASSING :personId AS "personId")`,
+      { personId: person.id },
+    )
+    .getOne()
+
+  if (!candidate) {
+    throw new ForbiddenException(
+      'Esta candidatura não pertence ao utilizador autenticado.',
+    )
+  }
+
+  return candidate
 }
+// private async cleanupUploadedFiles(
+//   uploaded: Array<{ documentTypeId: number; fileName: string }>,
+// ) {
+//  TOD: IMPLEMNTAR ROTA DE APAGAR ARQUIVOS NO UPLOAD SERVICES
+//   await Promise.allSettled(
+//     uploaded.map((item) =>
+//       this.storageService.delete?.(item.fileName).catch(() => {
+//         // best-effort: se a limpeza falhar, só regista, não bloqueia a resposta ao usuário
+//         console.error(`Falha ao limpar ficheiro órfão: ${item.fileName}`)
+//       }),
+//     ),
+//   )
+// }
+private async uploadAllApplicationFiles(
+  personal: CreateApplicationPayload['personal'],
+  files: CreateApplicationPayload['files'],
+): Promise<Array<{ documentTypeId: number; fileName: string }>> {
+  const uploadTasks: Array<{ documentTypeId: number; file: ApplicationFile }> = [
+    { documentTypeId: personal.documentType, file: files.identificationDocument },
+    { documentTypeId: TipoDocumentoNecessario.CURRICULUM_VITAE, file: files.cv },
+    { documentTypeId: TipoDocumentoNecessario.CERTIFICADO, file: files.courseCertificate },
+    {
+      documentTypeId: TipoDocumentoNecessario.DECLARACAO_FORMACAO_PEDAGOGICA,
+      file: files.pedagogicalAggregation,
+    },
+    ...files.certificates.map((certificate) => ({
+      documentTypeId: TipoDocumentoNecessario.CERTIFICADO,
+      file: certificate,
+    })),
+  ]
+
+  const uploaded: Array<{ documentTypeId: number; fileName: string }> = []
+
+  try {
+    // Promise.all: se um falhar, os outros ainda em curso não são "desfeitos"
+    // automaticamente, mas o catch abaixo lida com isso via allSettled.
+    const results = await Promise.allSettled(
+      uploadTasks.map(async (task) => {
+        const result = await this.storageService.upload(task.file)
+        return { documentTypeId: task.documentTypeId, fileName: result.file.filename }
+      }),
+    )
+
+    const failed = results.filter(
+      (r): r is PromiseRejectedResult => r.status === 'rejected',
+    )
+    const succeeded = results.filter(
+      (r): r is PromiseFulfilledResult<{ documentTypeId: number; fileName: string }> =>
+        r.status === 'fulfilled',
+    )
+
+    succeeded.forEach((r) => uploaded.push(r.value))
+
+    if (failed.length) {
+      // alguns uploads deram certo, outros não — limpa os que subiram
+      // antes de propagar o erro, pra não deixar arquivos órfãos no storage.
+      // await this.cleanupUploadedFiles(uploaded)
+      throw new InternalServerErrorException(
+        'Falha ao enviar um ou mais documentos. Tente novamente.',
+      )
+    }
+
+    return uploaded
+  } catch (error) {
+    if (error instanceof InternalServerErrorException) throw error
+    // await this.cleanupUploadedFiles(uploaded)
+    throw new InternalServerErrorException(
+      'Falha ao enviar os documentos da candidatura.',
+    )
+  }
+}
+}
+
+
+
+
+
