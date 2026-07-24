@@ -4,7 +4,7 @@ import { CreateApplicationPayload } from './types/create-application-payload.typ
 import { StorageService } from '../../../commons/services/storage.service'
 import { InjectRepository } from '@nestjs/typeorm'
 import { PersonEntity } from 'src/modules/applications/entity/person.entity'
-import { DataSource, Repository } from 'typeorm'
+import { DataSource, In, Repository } from 'typeorm'
 import { CandidateEntity } from '../entity/candidate.entity'
 import { AcademicEducationEntity } from '../entity/academic-education.entity'
 import { TeachingExperienceEntity } from '../entity/teaching-experience.entity'
@@ -12,6 +12,8 @@ import { TeacherApplicationDocument } from '../entity/teacher-application-docume
 import { ApplicationFile } from '../../../commons/types/application-file.type'
 import { User } from 'src/modules/user/entities/user.entity'
 import { HashService } from 'src/commons/services/hash.service'
+import { ApplicationStatusEntity } from '../entity/application-status.entity'
+import { AcademicDegreeEntity } from '../entity/academic-degree.entity'
 
 export enum TipoDocumentoNecessario {
   BI = 1,
@@ -43,10 +45,19 @@ export class TeacherApplicationsService {
     @InjectRepository(PersonEntity)
     private readonly personRepository: Repository<PersonEntity>,
     @InjectRepository(CandidateEntity)
+    private readonly candidateRepository: Repository<CandidateEntity>,
     @InjectRepository(TeacherApplicationDocument)
     private readonly teacherApplicationDocumentRepository: Repository<TeacherApplicationDocument>,
+    @InjectRepository(AcademicEducationEntity)
+    private readonly academicEducationRepository: Repository<AcademicEducationEntity>,
+    @InjectRepository(TeachingExperienceEntity)
+    private readonly teachingExperienceRepository: Repository<TeachingExperienceEntity>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(ApplicationStatusEntity)
+    private readonly applicationStatusRepository: Repository<ApplicationStatusEntity>,
+    @InjectRepository(AcademicDegreeEntity)
+    private readonly academicDegreeRepository: Repository<AcademicDegreeEntity>,
   ) {}
 
   async create(payload: CreateApplicationPayload) {
@@ -206,6 +217,110 @@ await Promise.all([
 ])
     return {message: 'Candidatura criada com sucesso'}
   }
+
+async myApplications(username: string) {
+  const person = await this.personRepository.findOne({
+    where: { email: username },
+  })
+
+  if (!person) {
+    return null
+  }
+
+  const candidates = await this.candidateRepository
+    .createQueryBuilder('candidate')
+    .where(
+      `JSON_EXISTS(candidate.person, '$?(@.pk_pessoa == $personId)' PASSING :personId AS "personId")`,
+      { personId: person.id },
+    )
+    .orderBy('candidate.applicationDate', 'DESC')
+    .getMany()
+
+  if (!candidates.length) {
+    return null
+  }
+
+  const candidateIds = candidates.map((c) => c.id)
+
+  const statusIds = [
+    ...new Set(
+      candidates
+        .map((c) => c.applicationStatusId)
+        .filter((id): id is number => id != null),
+    ),
+  ]
+  const academicDegreeIds = [
+    ...new Set(
+      candidates
+        .map((c) => c.academicDegreeId)
+        .filter((id): id is number => id != null),
+    ),
+  ]
+
+  const [
+    academicEducations,
+    teachingExperiences,
+    documents,
+    applicationStatuses,
+    academicDegrees,
+  ] = await Promise.all([
+    this.academicEducationRepository.find({
+      where: { candidateId: In(candidateIds) },
+    }),
+    this.teachingExperienceRepository.find({
+      where: { candidateId: In(candidateIds) },
+    }),
+    this.teacherApplicationDocumentRepository.find({
+      where: { candidateId: In(candidateIds) },
+    }),
+    statusIds.length
+      ? this.applicationStatusRepository.find({ where: { id: In(statusIds) } })
+      : Promise.resolve([]),
+    academicDegreeIds.length
+      ? this.academicDegreeRepository.find({
+          where: { id: In(academicDegreeIds) },
+        })
+      : Promise.resolve([]),
+  ])
+
+  const statusMap = new Map(applicationStatuses.map((s) => [s.id, s]))
+  const academicDegreeMap = new Map(academicDegrees.map((d) => [d.id, d]))
+
+  const result = candidates.map((candidate) => ({
+    id: candidate.id,
+    person: {
+      id: person.id,
+      fullName: person.fullName,
+      email: person.email,
+    },
+    applicationStatus: candidate.applicationStatusId
+      ? {
+          id: candidate.applicationStatusId,
+          description:
+            statusMap.get(candidate.applicationStatusId)?.description ?? null,
+        }
+      : null,
+    academicDegree: candidate.academicDegreeId
+      ? {
+          id: candidate.academicDegreeId,
+          designation:
+            academicDegreeMap.get(candidate.academicDegreeId)?.designation ??
+            null,
+          acronym:
+            academicDegreeMap.get(candidate.academicDegreeId)?.acronym ?? null,
+        }
+      : null,
+    academicEducations: academicEducations.filter(
+      (item) => item.candidateId === candidate.id,
+    ),
+    teachingExperiences: teachingExperiences.filter(
+      (item) => item.candidateId === candidate.id,
+    ),
+    documents: documents.filter((item) => item.candidateId === candidate.id),
+  }))
+
+  return result[0]
+}
 
   private async uploadAndSaveDocument(
     candidateId: number,

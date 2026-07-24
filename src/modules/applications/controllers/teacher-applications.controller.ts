@@ -1,16 +1,20 @@
 import {
   Body,
   Controller,
+  Get,
   Post,
+  Req,
   UploadedFiles,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common'
 
-import { ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger'
+import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { FileFieldsInterceptor } from '@nestjs/platform-express'
 import { TeacherApplicationsService } from '../services/teacher-applications.service'
 import { CreateApplicationDto } from '../dto/create-application.dto'
 import { mapMulterFile } from 'src/commons/utils/multer-file.mapper'
+import { RemoteJwtAuthGuard } from 'src/commons/guards/remote-jwt-auth.guard'
 
 @ApiTags('Applications')
 @Controller('applications')
@@ -74,5 +78,11 @@ export class ApplicationsController {
         certificates: files.certificates.map(mapMulterFile),
       },
     })
+  }
+  @ApiBearerAuth()
+  @UseGuards(RemoteJwtAuthGuard)
+  @Get("me")
+  myApplications( @Req() req: any,){
+    return this.service.myApplications(req.user.username)
   }
 }
