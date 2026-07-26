@@ -16,6 +16,8 @@ import { ApplicationStatusEntity } from '../entity/application-status.entity'
 import { AcademicDegreeEntity } from '../entity/academic-degree.entity'
 import { UpdateAcademicEducationItemDto } from '../dto/update-academic-educations.dto'
 import { UpdateTeachingExperienceItemDto } from '../dto/update-teaching-experiences.dto'
+import { HttpService } from '@nestjs/axios'
+import { EmailHelper } from 'src/commons/utils/email.helper'
 
 export enum TipoDocumentoNecessario {
   BI = 1,
@@ -60,6 +62,7 @@ export class TeacherApplicationsService {
     private readonly applicationStatusRepository: Repository<ApplicationStatusEntity>,
     @InjectRepository(AcademicDegreeEntity)
     private readonly academicDegreeRepository: Repository<AcademicDegreeEntity>,
+    private readonly httpService: HttpService,
   ) {}
 
   async create(payload: CreateApplicationPayload) {
@@ -201,6 +204,19 @@ export class TeacherApplicationsService {
 
       return savedCandidate
     })
+
+    await EmailHelper.sendEmail(this.httpService, {
+    to: personal.email,
+    subject: 'Confirmação de Candidatura - Universidade Metodista de Angola',
+    company: 'universidade_metodista_angola',
+    type: 'candidatura_portal_colaborador',
+    context: {
+      nome_candidato: personal.fullName,
+      email_candidato: personal.email,
+      numero_documento: personal.documentNumber,
+      link_portal: process.env.PORTAL_CANDIDATE_URL,
+    },
+    })  
 
     return { message: 'Candidatura criada com sucesso' }
   } catch (error) {
