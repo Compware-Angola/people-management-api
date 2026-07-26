@@ -9,7 +9,7 @@ export class EmployeeQueryDto extends PaginationQueryDto {
   })
   @IsOptional()
   @IsString()
-  bi?: string;
+  bi?: string
 
   @ApiPropertyOptional({
     description: 'Filtrar pelo Nome',
@@ -17,7 +17,7 @@ export class EmployeeQueryDto extends PaginationQueryDto {
   })
   @IsOptional()
   @IsString()
-  name?: string;
+  name?: string
 
   @ApiPropertyOptional({
     description: 'Filtrar pelo E-mail',
@@ -25,5 +25,5 @@ export class EmployeeQueryDto extends PaginationQueryDto {
   })
   @IsOptional()
   @IsString()
-  email?: string;
+  email?: string
 }

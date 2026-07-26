@@ -5,13 +5,13 @@ import {
   IsOptional,
   IsString,
   MaxLength,
-} from 'class-validator';
+} from 'class-validator'
 
 export class CreateEmployeeDto {
   @ApiProperty({ example: 1, description: 'ID do usuário já cadastrado' })
   @IsNumber()
   @IsNotEmpty()
-  userId: number;
+  userId: number
 
   @ApiProperty({ example: 'BFA' })
   @IsString()
