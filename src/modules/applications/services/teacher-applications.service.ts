@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { ConflictException, Injectable } from '@nestjs/common'
+import { ConflictException, Injectable, InternalServerErrorException } from '@nestjs/common'
 import { CreateApplicationPayload } from './types/create-application-payload.type'
 import { StorageService } from '../../../commons/services/storage.service'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -10,6 +10,8 @@ import { AcademicEducationEntity } from '../entity/academic-education.entity'
 import { TeachingExperienceEntity } from '../entity/teaching-experience.entity'
 import { TeacherApplicationDocument } from '../entity/teacher-application-document.entity'
 import { ApplicationFile } from '../../../commons/types/application-file.type'
+import { User } from 'src/modules/user/entities/user.entity'
+import { HashService } from 'src/commons/services/hash.service'
 
 export enum TipoDocumentoNecessario {
   BI = 1,
@@ -37,17 +39,25 @@ export class TeacherApplicationsService {
   constructor(
     private datasource: DataSource,
     private readonly storageService: StorageService,
+    private readonly hashService: HashService,
     @InjectRepository(PersonEntity)
     private readonly personRepository: Repository<PersonEntity>,
     @InjectRepository(CandidateEntity)
     @InjectRepository(TeacherApplicationDocument)
     private readonly teacherApplicationDocumentRepository: Repository<TeacherApplicationDocument>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
   ) {}
 
   async create(payload: CreateApplicationPayload) {
     const { personal, academic, experience, files } = payload
-
-    const [personByEmail, personByDocumentNumber, personByPhone, documentType] =
+    let hashPassword: string
+    try{
+      hashPassword = await this.hashService.hash(personal.documentNumber)
+    } catch(error) {
+      throw new InternalServerErrorException()
+    }
+    const [personByEmail, personByDocumentNumber, personByPhone, documentType, userByEmail, userByDocumentNumber] =
       await Promise.all([
         this.findPersonByEmail(personal.email),
         this.findPersonByDocumentNumber(personal.documentNumber),
@@ -56,14 +66,16 @@ export class TeacherApplicationsService {
           personal.alternativePhone ?? null,
         ),
         this.documentType(personal.documentType),
+        this.findUserByEmail(personal.email),
+        this.findUserByDocumentNumber(personal.documentNumber)
       ])
 
-    if (personByEmail) {
+    if (personByEmail || userByEmail) {
       throw new ConflictException(
         'O endereço de e-mail informado já está associado a um candidato cadastrado.',
       )
     }
-    if (personByDocumentNumber) {
+    if (personByDocumentNumber || userByDocumentNumber) {
       throw new ConflictException(
         `O número de ${documentType ?? 'documento'} informado já está associado a um candidato cadastrado.`,
       )
@@ -95,7 +107,7 @@ export class TeacherApplicationsService {
       const teachingExperienceEntity = manager.getRepository(
         TeachingExperienceEntity,
       )
-
+      const userRepository = manager.getRepository(User)
       const person = personRepository.create({
         nationalityId: personal.nationality,
         email: personal.email,
@@ -114,6 +126,18 @@ export class TeacherApplicationsService {
       })
       savedPerson = await personRepository.save(person)
 
+      await userRepository.save({
+        name: personal.fullName,
+        email: personal.email,
+        bi: personal.documentNumber,
+        phone: personal.phone,
+        alternativePhone: personal.alternativePhone,
+        address: personal.address,
+        password: hashPassword,
+        province:"unknown",
+        district:"unknown",
+        municipality:"unknown"
+      })
       const candidate = candidateRepository.create({
         applicationDate: new Date(),
         person: JSON.stringify({
@@ -181,9 +205,7 @@ await Promise.all([
     ),
   ),
 ])
-
     return {message: 'Candidatura criada com sucesso'}
-
   }
 
   private async uploadAndSaveDocument(
@@ -252,5 +274,15 @@ await Promise.all([
     )
 
     return result[0]?.DESIGNACAO ?? null
+  }
+  private async findUserByEmail(email: string): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: { email },
+    })
+  }
+  private async findUserByDocumentNumber(bi: string): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: { bi },
+    })
   }
 }
