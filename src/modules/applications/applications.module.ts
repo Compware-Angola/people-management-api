@@ -10,6 +10,9 @@ import { TeachingExperienceEntity } from './entity/teaching-experience.entity'
 import { TeacherApplicationDocument } from './entity/teacher-application-document.entity'
 import { HashService } from 'src/commons/services/hash.service'
 import { User } from '../user/entities/user.entity'
+import { ApplicationStatusEntity } from './entity/application-status.entity'
+import { AcademicDegreeEntity } from './entity/academic-degree.entity'
+import { HttpModule } from '@nestjs/axios'
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -19,8 +22,15 @@ import { User } from '../user/entities/user.entity'
       AcademicEducationEntity,
       TeachingExperienceEntity,
       TeacherApplicationDocument,
-      User
+      User,
+      ApplicationStatusEntity,
+      AcademicDegreeEntity
+
     ]),
+    HttpModule.register({
+      timeout: 5000,
+      maxRedirects: 5,
+    }),
   ],
   controllers: [ApplicationsController],
   providers: [StorageService, HashService, TeacherApplicationsService],
