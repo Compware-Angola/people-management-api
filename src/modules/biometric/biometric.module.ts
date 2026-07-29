@@ -1,6 +1,6 @@
-import { Module } from '@nestjs/common';
-import { BiometricService } from './biometric.service';
-import { BiometricController } from './biometric.controller';
+import { Module } from '@nestjs/common'
+import { BiometricService } from './biometric.service'
+import { BiometricController } from './biometric.controller'
 
 @Module({
   controllers: [BiometricController],

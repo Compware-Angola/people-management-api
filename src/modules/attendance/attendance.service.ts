@@ -7,7 +7,12 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
 import { UpdateAttendanceDto } from './dto/update-attendance.dto';
+<<<<<<< HEAD
 import { PaginationQueryDto } from '../../commons/dto/pagination.dto';
+=======
+import { Attendance } from './entities/attendance.entity';
+import { PaginationQueryDto } from 'src/commons/dto/pagination.dto';
+>>>>>>> origin/hml
 
 @Injectable()
 export class AttendanceService {
@@ -31,7 +36,7 @@ export class AttendanceService {
         ],
       );
     } catch (error) {
-      this.handleDatabaseError(error, 'cadastrar');
+      this.handleDatabaseError(error, 'cadastrar')
     }
   }
 
@@ -64,7 +69,7 @@ export class AttendanceService {
         total,
         totalPages: Math.ceil(total / query.limit),
       },
-    };
+    }
   }
 
   async findOne(id: number) {
@@ -115,11 +120,11 @@ export class AttendanceService {
         total,
         totalPages: Math.ceil(total / query.limit),
       },
-    };
+    }
   }
 
   async update(id: number, updateAttendanceDto: UpdateAttendanceDto) {
-    const attendance = await this.findOne(id);
+    const attendance = await this.findOne(id)
 
     if (!attendance) {
       throw new BadRequestException('Assiduidade não encontrada');
@@ -165,7 +170,7 @@ export class AttendanceService {
       await this.dataSource.query(query, values);
       return this.findOne(id);
     } catch (error) {
-      this.handleDatabaseError(error, 'atualizar');
+      this.handleDatabaseError(error, 'atualizar')
     }
   }
 
@@ -185,6 +190,6 @@ export class AttendanceService {
       throw new BadRequestException('Situação informada é inválida');
     }
 
-    throw new InternalServerErrorException(`Erro ao ${action} assiduidade`);
+    throw new InternalServerErrorException(`Erro ao ${action} assiduidade`)
   }
 }

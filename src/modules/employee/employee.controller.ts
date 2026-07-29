@@ -31,12 +31,12 @@ export class EmployeeController {
   @Get()
   @ApiOperation({ summary: 'Listar todos os colaboradores' })
   findAll(@Query() query: EmployeeQueryDto) {
-    return this.employeeService.findAll(query);
+    return this.employeeService.findAll(query)
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.employeeService.findOne(+id);
+    return this.employeeService.findOne(+id)
   }
 
   @Patch(':id')
@@ -53,6 +53,6 @@ export class EmployeeController {
   @Delete('files/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async removeFile(@Param('id') id: string) {
-    await this.employeeService.removeFile(+id);
+    await this.employeeService.removeFile(+id)
   }
 }
