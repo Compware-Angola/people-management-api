@@ -10,6 +10,7 @@ import { UserModule } from './modules/user/user.module';
 import { PermissionsModule } from './modules/permissions/permissions.module';
 import { ApplicationsModule } from './modules/applications/applications.module';
 import { LeavesModule } from './modules/leaves/leaves.module';
+import { SalaryModule } from './modules/salary/salary.module'
 
 @Module({
   imports: [
@@ -23,6 +24,9 @@ import { LeavesModule } from './modules/leaves/leaves.module';
     PermissionsModule,
     ApplicationsModule,
     LeavesModule,
+    ApplicationsModule,
+    LeavesModule,
+    SalaryModule,
   ],
 })
 export class AppModule {}
