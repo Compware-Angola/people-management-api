@@ -11,6 +11,8 @@ import { PermissionsModule } from './modules/permissions/permissions.module';
 import { ApplicationsModule } from './modules/applications/applications.module';
 import { LeavesModule } from './modules/leaves/leaves.module';
 import { PositionsModule } from './modules/possition/possition.module';
+import { DepartmentModule } from './modules/department/department.module';
+import { CostCentersModule } from './modules/cost-center/cost-centers.module';
 
 @Module({
   imports: [
@@ -24,7 +26,9 @@ import { PositionsModule } from './modules/possition/possition.module';
     PermissionsModule,
     ApplicationsModule,
     LeavesModule,
-    PositionsModule
+    PositionsModule,
+    DepartmentModule,
+    CostCentersModule
   ],
 })
 export class AppModule {}
