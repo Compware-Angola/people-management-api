@@ -43,4 +43,10 @@ export class EnvValidation {
 
   @IsString()
   HASH_SERVICE_URL: string;
+
+  @IsString()
+  MAIL_API_URL: string;
+
+  @IsString()
+  PORTAL_CANDIDATE_URL: string;
 }
