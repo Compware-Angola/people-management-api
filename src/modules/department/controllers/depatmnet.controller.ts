@@ -10,18 +10,13 @@ import {
   ParseIntPipe,
   HttpCode,
   HttpStatus,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-} from '@nestjs/swagger';
-import { DepartmentsService } from '../services/department.service';
-import { Department } from '../entity/department.entity';
-import { CreateDepartmentDto } from '../dto/create-department.dto';
-import { ListDepartmentsQueryDto } from '../dto/list-departments-query.dto';
-import { UpdateDepartmentDto } from '../dto/update-department.dto';
+} from '@nestjs/common'
+import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger'
+import { DepartmentsService } from '../services/department.service'
+import { Department } from '../entity/department.entity'
+import { CreateDepartmentDto } from '../dto/create-department.dto'
+import { ListDepartmentsQueryDto } from '../dto/list-departments-query.dto'
+import { UpdateDepartmentDto } from '../dto/update-department.dto'
 
 @ApiTags('Departments')
 @Controller('departments')
@@ -36,18 +31,20 @@ export class DepartmentsController {
     type: Department,
   })
   create(@Body() dto: CreateDepartmentDto) {
-    return this.departmentsService.create(dto);
+    return this.departmentsService.create(dto)
   }
 
   @Get()
-  @ApiOperation({ summary: 'Listar departamentos (com paginação, busca e filtro por status)' })
+  @ApiOperation({
+    summary: 'Listar departamentos (com paginação, busca e filtro por status)',
+  })
   @ApiResponse({
     status: 200,
     description: 'Lista paginada de departamentos.',
     type: [Department],
   })
   findAll(@Query() query: ListDepartmentsQueryDto) {
-    return this.departmentsService.findAll(query);
+    return this.departmentsService.findAll(query)
   }
 
   @Get(':code')
@@ -60,7 +57,7 @@ export class DepartmentsController {
   })
   @ApiResponse({ status: 404, description: 'Departamento não encontrado.' })
   findOne(@Param('code', ParseIntPipe) code: number) {
-    return this.departmentsService.findOne(code);
+    return this.departmentsService.findOne(code)
   }
 
   @Patch(':code')
@@ -76,16 +73,19 @@ export class DepartmentsController {
     @Param('code', ParseIntPipe) code: number,
     @Body() dto: UpdateDepartmentDto,
   ) {
-    return this.departmentsService.update(code, dto);
+    return this.departmentsService.update(code, dto)
   }
 
   @Delete(':code')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Remover um departamento' })
   @ApiParam({ name: 'code', description: 'Código do departamento', example: 1 })
-  @ApiResponse({ status: 204, description: 'Departamento removido com sucesso.' })
+  @ApiResponse({
+    status: 204,
+    description: 'Departamento removido com sucesso.',
+  })
   @ApiResponse({ status: 404, description: 'Departamento não encontrado.' })
   remove(@Param('code', ParseIntPipe) code: number) {
-    return this.departmentsService.remove(code);
+    return this.departmentsService.remove(code)
   }
 }

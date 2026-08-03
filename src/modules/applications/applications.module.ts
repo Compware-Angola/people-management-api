@@ -24,8 +24,7 @@ import { HttpModule } from '@nestjs/axios'
       TeacherApplicationDocument,
       User,
       ApplicationStatusEntity,
-      AcademicDegreeEntity
-
+      AcademicDegreeEntity,
     ]),
     HttpModule.register({
       timeout: 5000,

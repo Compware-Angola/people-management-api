@@ -6,9 +6,8 @@ import {
   Unique,
   ManyToOne,
   JoinColumn,
-} from 'typeorm';
-import { Department } from './department.entity';
-
+} from 'typeorm'
+import { Department } from './department.entity'
 
 @Entity('GP_CENTROS_CUSTO')
 @Unique('UQ_GP_CENTROS_CUSTO_DESCRICAO', ['description'])
@@ -17,18 +16,18 @@ export class CostCenter {
     name: 'CODIGO',
     type: 'number',
   })
-  code: number;
+  code: number
 
   @Column({
     name: 'DEPARTAMENTO_ID',
     type: 'number',
     nullable: false,
   })
-  departmentId: number;
+  departmentId: number
 
   @ManyToOne(() => Department, { eager: false })
   @JoinColumn({ name: 'DEPARTAMENTO_ID' })
-  department: Department;
+  department: Department
 
   @Column({
     name: 'DESCRICAO',
@@ -36,7 +35,7 @@ export class CostCenter {
     length: 150,
     nullable: false,
   })
-  description: string;
+  description: string
 
   @Column({
     name: 'ESTADO',
@@ -46,7 +45,7 @@ export class CostCenter {
     default: 1,
     nullable: false,
   })
-  status: number;
+  status: number
 
   @Column({
     name: 'CRIADO_EM',
@@ -54,11 +53,11 @@ export class CostCenter {
     default: () => 'SYSDATE',
     nullable: false,
   })
-  createdAt: Date;
+  createdAt: Date
 
   @DeleteDateColumn({
     name: 'DELETADO_EM',
     type: 'date',
   })
-  deletedAt: Date | null;
+  deletedAt: Date | null
 }

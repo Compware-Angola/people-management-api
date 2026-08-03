@@ -4,8 +4,7 @@ import {
   Column,
   DeleteDateColumn,
   Unique,
-} from 'typeorm';
-
+} from 'typeorm'
 
 @Entity('GP_CARGOS')
 @Unique('UQ_GP_CARGOS_DESCRICAO', ['description'])
@@ -14,7 +13,7 @@ export class Position {
     name: 'CODIGO',
     type: 'number',
   })
-  code: number;
+  code: number
 
   @Column({
     name: 'DESCRICAO',
@@ -22,7 +21,7 @@ export class Position {
     length: 150,
     nullable: false,
   })
-  description: string;
+  description: string
 
   @Column({
     name: 'ESTADO',
@@ -32,7 +31,7 @@ export class Position {
     default: 1,
     nullable: false,
   })
-  status: number;
+  status: number
 
   @Column({
     name: 'CRIADO_EM',
@@ -40,11 +39,11 @@ export class Position {
     default: () => 'SYSDATE',
     nullable: false,
   })
-  createdAt: Date;
+  createdAt: Date
 
   @DeleteDateColumn({
     name: 'DELETADO_EM',
     type: 'date',
   })
-  deletedAt: Date | null;
+  deletedAt: Date | null
 }

@@ -5,29 +5,29 @@ import {
   ManyToOne,
   JoinColumn,
   PrimaryColumn,
-} from 'typeorm';
-import { Group } from './group.entity';
-import { Permission } from './permission.entity';
+} from 'typeorm'
+import { Group } from './group.entity'
+import { Permission } from './permission.entity'
 
 @Entity('GP_GRUPOS_PERMISSOES')
 export class GroupPermission {
   @PrimaryColumn({ name: 'CODIGO_GRUPO' })
-  groupId: number;
+  groupId: number
 
   @PrimaryColumn({ name: 'CODIGO_PERMISSAO' })
-  permissionId: number;
+  permissionId: number
 
   @Column({ name: 'ESTADO', type: 'number', default: 1 })
-  status: number;
+  status: number
 
   @CreateDateColumn({ name: 'CRIADO_EM', type: 'date' })
-  createdAt: Date;
+  createdAt: Date
 
   @ManyToOne(() => Group, (group) => group.groupPermissions)
   @JoinColumn({ name: 'CODIGO_GRUPO' })
-  group: Group;
+  group: Group
 
   @ManyToOne(() => Permission, (permission) => permission.groupPermissions)
   @JoinColumn({ name: 'CODIGO_PERMISSAO' })
-  permission: Permission;
+  permission: Permission
 }

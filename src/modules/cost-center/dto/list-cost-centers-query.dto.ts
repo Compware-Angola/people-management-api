@@ -1,7 +1,7 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsIn, IsInt, IsOptional, IsString, Min } from 'class-validator';
-import { PaginationQueryDto } from 'src/commons/dto/pagination.dto';
+import { ApiPropertyOptional } from '@nestjs/swagger'
+import { Type } from 'class-transformer'
+import { IsIn, IsInt, IsOptional, IsString, Min } from 'class-validator'
+import { PaginationQueryDto } from 'src/commons/dto/pagination.dto'
 
 export class ListCostCentersQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional({
@@ -10,7 +10,7 @@ export class ListCostCentersQueryDto extends PaginationQueryDto {
   })
   @IsOptional()
   @IsString()
-  search?: string;
+  search?: string
 
   @ApiPropertyOptional({
     description: 'Filtrar por departamento',
@@ -19,7 +19,7 @@ export class ListCostCentersQueryDto extends PaginationQueryDto {
   @IsOptional()
   @Type(() => Number)
   @IsInt()
-  departmentId?: number;
+  departmentId?: number
 
   @ApiPropertyOptional({
     description: 'Filtrar por estado (1 = ativo, 0 = inativo)',
@@ -28,5 +28,5 @@ export class ListCostCentersQueryDto extends PaginationQueryDto {
   @IsOptional()
   @Type(() => Number)
   @IsIn([0, 1])
-  status?: number;
+  status?: number
 }

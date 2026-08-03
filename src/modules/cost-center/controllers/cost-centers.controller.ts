@@ -10,18 +10,13 @@ import {
   ParseIntPipe,
   HttpCode,
   HttpStatus,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-} from '@nestjs/swagger';
-import { CostCentersService } from '../services/cost-centers.service';
-import { CostCenter } from '../entity/cost-center.entity';
-import { CreateCostCenterDto } from '../dto/create-cost-center.dto';
-import { ListCostCentersQueryDto } from '../dto/list-cost-centers-query.dto';
-import { UpdateCostCenterDto } from '../dto/update-cost-center.dto';
+} from '@nestjs/common'
+import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger'
+import { CostCentersService } from '../services/cost-centers.service'
+import { CostCenter } from '../entity/cost-center.entity'
+import { CreateCostCenterDto } from '../dto/create-cost-center.dto'
+import { ListCostCentersQueryDto } from '../dto/list-cost-centers-query.dto'
+import { UpdateCostCenterDto } from '../dto/update-cost-center.dto'
 
 @ApiTags('Cost Centers')
 @Controller('cost-centers')
@@ -36,7 +31,7 @@ export class CostCentersController {
     type: CostCenter,
   })
   create(@Body() dto: CreateCostCenterDto) {
-    return this.costCentersService.create(dto);
+    return this.costCentersService.create(dto)
   }
 
   @Get()
@@ -49,12 +44,16 @@ export class CostCentersController {
     type: [CostCenter],
   })
   findAll(@Query() query: ListCostCentersQueryDto) {
-    return this.costCentersService.findAll(query);
+    return this.costCentersService.findAll(query)
   }
 
   @Get(':code')
   @ApiOperation({ summary: 'Buscar um centro de custo pelo código' })
-  @ApiParam({ name: 'code', description: 'Código do centro de custo', example: 1 })
+  @ApiParam({
+    name: 'code',
+    description: 'Código do centro de custo',
+    example: 1,
+  })
   @ApiResponse({
     status: 200,
     description: 'Centro de custo encontrado.',
@@ -62,12 +61,16 @@ export class CostCentersController {
   })
   @ApiResponse({ status: 404, description: 'Centro de custo não encontrado.' })
   findOne(@Param('code', ParseIntPipe) code: number) {
-    return this.costCentersService.findOne(code);
+    return this.costCentersService.findOne(code)
   }
 
   @Patch(':code')
   @ApiOperation({ summary: 'Atualizar um centro de custo' })
-  @ApiParam({ name: 'code', description: 'Código do centro de custo', example: 1 })
+  @ApiParam({
+    name: 'code',
+    description: 'Código do centro de custo',
+    example: 1,
+  })
   @ApiResponse({
     status: 200,
     description: 'Centro de custo atualizado com sucesso.',
@@ -78,16 +81,23 @@ export class CostCentersController {
     @Param('code', ParseIntPipe) code: number,
     @Body() dto: UpdateCostCenterDto,
   ) {
-    return this.costCentersService.update(code, dto);
+    return this.costCentersService.update(code, dto)
   }
 
   @Delete(':code')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Remover um centro de custo' })
-  @ApiParam({ name: 'code', description: 'Código do centro de custo', example: 1 })
-  @ApiResponse({ status: 204, description: 'Centro de custo removido com sucesso.' })
+  @ApiParam({
+    name: 'code',
+    description: 'Código do centro de custo',
+    example: 1,
+  })
+  @ApiResponse({
+    status: 204,
+    description: 'Centro de custo removido com sucesso.',
+  })
   @ApiResponse({ status: 404, description: 'Centro de custo não encontrado.' })
   remove(@Param('code', ParseIntPipe) code: number) {
-    return this.costCentersService.remove(code);
+    return this.costCentersService.remove(code)
   }
 }

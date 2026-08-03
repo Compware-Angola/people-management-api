@@ -10,19 +10,13 @@ import {
   ParseIntPipe,
   HttpCode,
   HttpStatus,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-} from '@nestjs/swagger';
-import { PositionsService } from '../services/positions.service';
-import { Position } from '../entity/position.entity';
-import { CreatePositionDto } from '../dto/create-position.dto';
-import { ListPositionsQueryDto } from '../dto/list-positions-query.dto';
-import { UpdatePositionDto } from '../dto/update-position.dto';
-
+} from '@nestjs/common'
+import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger'
+import { PositionsService } from '../services/positions.service'
+import { Position } from '../entity/position.entity'
+import { CreatePositionDto } from '../dto/create-position.dto'
+import { ListPositionsQueryDto } from '../dto/list-positions-query.dto'
+import { UpdatePositionDto } from '../dto/update-position.dto'
 
 @ApiTags('Positions')
 @Controller('positions')
@@ -37,18 +31,20 @@ export class PositionsController {
     type: Position,
   })
   create(@Body() dto: CreatePositionDto) {
-    return this.positionsService.create(dto);
+    return this.positionsService.create(dto)
   }
 
   @Get()
-  @ApiOperation({ summary: 'Listar cargos (com paginação, busca e filtro por status)' })
+  @ApiOperation({
+    summary: 'Listar cargos (com paginação, busca e filtro por status)',
+  })
   @ApiResponse({
     status: 200,
     description: 'Lista paginada de cargos.',
     type: [Position],
   })
   findAll(@Query() query: ListPositionsQueryDto) {
-    return this.positionsService.findAll(query);
+    return this.positionsService.findAll(query)
   }
 
   @Get(':code')
@@ -61,7 +57,7 @@ export class PositionsController {
   })
   @ApiResponse({ status: 404, description: 'Cargo não encontrado.' })
   findOne(@Param('code', ParseIntPipe) code: number) {
-    return this.positionsService.findOne(code);
+    return this.positionsService.findOne(code)
   }
 
   @Patch(':code')
@@ -77,7 +73,7 @@ export class PositionsController {
     @Param('code', ParseIntPipe) code: number,
     @Body() dto: UpdatePositionDto,
   ) {
-    return this.positionsService.update(code, dto);
+    return this.positionsService.update(code, dto)
   }
 
   @Delete(':code')
@@ -87,6 +83,6 @@ export class PositionsController {
   @ApiResponse({ status: 204, description: 'Cargo removido com sucesso.' })
   @ApiResponse({ status: 404, description: 'Cargo não encontrado.' })
   remove(@Param('code', ParseIntPipe) code: number) {
-    return this.positionsService.remove(code);
+    return this.positionsService.remove(code)
   }
 }

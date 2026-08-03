@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import {
   IsIn,
   IsInt,
@@ -6,7 +6,7 @@ import {
   IsOptional,
   IsString,
   MaxLength,
-} from 'class-validator';
+} from 'class-validator'
 
 export class CreateCostCenterDto {
   @ApiProperty({
@@ -15,7 +15,7 @@ export class CreateCostCenterDto {
   })
   @IsInt()
   @IsNotEmpty()
-  departmentId: number;
+  departmentId: number
 
   @ApiProperty({
     description: 'Descrição do centro de custo',
@@ -25,7 +25,7 @@ export class CreateCostCenterDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(150)
-  description: string;
+  description: string
 
   @ApiPropertyOptional({
     description: 'Estado do centro de custo (1 = ativo, 0 = inativo)',
@@ -34,5 +34,5 @@ export class CreateCostCenterDto {
   })
   @IsOptional()
   @IsIn([0, 1])
-  status?: number;
+  status?: number
 }

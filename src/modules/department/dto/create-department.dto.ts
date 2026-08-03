@@ -1,11 +1,11 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import {
   IsIn,
   IsNotEmpty,
   IsOptional,
   IsString,
   MaxLength,
-} from 'class-validator';
+} from 'class-validator'
 
 export class CreateDepartmentDto {
   @ApiProperty({
@@ -16,7 +16,7 @@ export class CreateDepartmentDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(150)
-  description: string;
+  description: string
 
   @ApiPropertyOptional({
     description: 'Estado do departamento (1 = ativo, 0 = inativo)',
@@ -25,5 +25,5 @@ export class CreateDepartmentDto {
   })
   @IsOptional()
   @IsIn([0, 1])
-  status?: number;
+  status?: number
 }

@@ -1,5 +1,13 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsNotEmpty, IsOptional, IsString, MaxLength, Min, Max } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger'
+import {
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+  Min,
+  Max,
+} from 'class-validator'
 
 export class CreatePositionDto {
   @ApiProperty({
@@ -10,7 +18,7 @@ export class CreatePositionDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(150)
-  description: string;
+  description: string
   @ApiProperty({
     description: 'Estado do cargo',
     example: 1,
@@ -24,5 +32,5 @@ export class CreatePositionDto {
   @IsInt()
   @Min(0)
   @Max(1)
-  status?: number;
+  status?: number
 }

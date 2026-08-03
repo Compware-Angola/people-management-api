@@ -13,8 +13,16 @@ import {
   UseInterceptors,
 } from '@nestjs/common'
 
-import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger'
-import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express'
+import {
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger'
+import {
+  FileFieldsInterceptor,
+  FileInterceptor,
+} from '@nestjs/platform-express'
 import { TeacherApplicationsService } from '../services/teacher-applications.service'
 import { CreateApplicationDto } from '../dto/create-application.dto'
 import { UpdateAcademicEducationsDto } from '../dto/update-academic-educations.dto'

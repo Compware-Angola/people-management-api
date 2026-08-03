@@ -2,13 +2,13 @@ import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
-} from '@nestjs/common';
-import { CreateEmployeeDto } from './dto/create-employee.dto';
-import { UpdateEmployeeDto } from './dto/update-employee.dto';
-import { EmployeeQueryDto } from './dto/employee-query.dto';
-import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
-import { CreateFileDto } from './dto/file/create-file.dto';
+} from '@nestjs/common'
+import { CreateEmployeeDto } from './dto/create-employee.dto'
+import { UpdateEmployeeDto } from './dto/update-employee.dto'
+import { EmployeeQueryDto } from './dto/employee-query.dto'
+import { InjectDataSource } from '@nestjs/typeorm'
+import { DataSource } from 'typeorm'
+import { CreateFileDto } from './dto/file/create-file.dto'
 
 @Injectable()
 export class EmployeeService {
@@ -31,36 +31,36 @@ export class EmployeeService {
           createPersonDto.currency,
           createPersonDto.status ?? 1,
         ],
-      );
+      )
     } catch (error) {
-      this.handleDatabaseError(error, 'cadastrar');
+      this.handleDatabaseError(error, 'cadastrar')
     }
   }
 
   async findAll(query: EmployeeQueryDto) {
-    const values: any[] = [];
-    let whereClause = '';
+    const values: any[] = []
+    let whereClause = ''
 
-    const conditions: string[] = [];
+    const conditions: string[] = []
     if (query.bi) {
-      conditions.push(`U.BI = :${values.length + 1}`);
-      values.push(query.bi);
+      conditions.push(`U.BI = :${values.length + 1}`)
+      values.push(query.bi)
     }
     if (query.name) {
-      conditions.push(`UPPER(U.NOME) LIKE :${values.length + 1}`);
-      values.push(`%${query.name.toUpperCase()}%`);
+      conditions.push(`UPPER(U.NOME) LIKE :${values.length + 1}`)
+      values.push(`%${query.name.toUpperCase()}%`)
     }
     if (query.email) {
-      conditions.push(`U.EMAIL = :${values.length + 1}`);
-      values.push(query.email);
+      conditions.push(`U.EMAIL = :${values.length + 1}`)
+      values.push(query.email)
     }
 
     if (conditions.length > 0) {
-      whereClause = `WHERE ${conditions.join(' AND ')}`;
+      whereClause = `WHERE ${conditions.join(' AND ')}`
     }
 
-    const placeholderOffset = values.length + 1;
-    const placeholderLimit = values.length + 2;
+    const placeholderOffset = values.length + 1
+    const placeholderLimit = values.length + 2
 
     const data = await this.dataSource.query(
       `SELECT C.CODIGO AS "id",
@@ -85,7 +85,7 @@ export class EmployeeService {
                ORDER BY C.CODIGO DESC
               OFFSET :${placeholderOffset} ROWS FETCH NEXT :${placeholderLimit} ROWS ONLY`,
       [...values, query.offset, query.limit],
-    );
+    )
 
     const totalResult = await this.dataSource.query(
       `SELECT COUNT(*) AS TOTAL 
@@ -93,9 +93,9 @@ export class EmployeeService {
          JOIN GP_USUARIOS U ON C.CODIGO_USUARIO = U.CODIGO
         ${whereClause}`,
       values,
-    );
+    )
 
-    const total = Number(totalResult[0]?.TOTAL ?? 0);
+    const total = Number(totalResult[0]?.TOTAL ?? 0)
 
     return {
       data,
@@ -105,7 +105,7 @@ export class EmployeeService {
         total,
         totalPages: Math.ceil(total / query.limit),
       },
-    };
+    }
   }
 
   async findOne(id: number) {
@@ -131,15 +131,15 @@ export class EmployeeService {
        JOIN GP_USUARIOS U ON C.CODIGO_USUARIO = U.CODIGO
       WHERE C.CODIGO = :1`,
       [id],
-    );
+    )
 
-    const employee = result[0] ?? null;
+    const employee = result[0] ?? null
 
     if (employee) {
-      employee.files = await this.findFilesByEmployee(employee.userId);
+      employee.files = await this.findFilesByEmployee(employee.userId)
     }
 
-    return employee;
+    return employee
   }
 
   async findFilesByEmployee(userId: number) {
@@ -155,7 +155,7 @@ export class EmployeeService {
         WHERE CODIGO_USUARIO = :1
           AND ESTADO = 1`,
       [userId],
-    );
+    )
   }
 
   async addFile(createFileDto: CreateFileDto) {
@@ -171,9 +171,9 @@ export class EmployeeService {
           createFileDto.path,
           createFileDto.description,
         ],
-      );
+      )
     } catch (error) {
-      throw new InternalServerErrorException('Erro ao salvar arquivo');
+      throw new InternalServerErrorException('Erro ao salvar arquivo')
     }
   }
 
@@ -181,18 +181,18 @@ export class EmployeeService {
     await this.dataSource.query(
       `UPDATE GP_ARQUIVOS SET ESTADO = 0 WHERE CODIGO = :1`,
       [id],
-    );
+    )
   }
 
   async update(id: number, updatePersonDto: UpdateEmployeeDto) {
-    const person = await this.findOne(id);
+    const person = await this.findOne(id)
 
     if (!person) {
-      throw new BadRequestException('colaborador não encontrado');
+      throw new BadRequestException('colaborador não encontrado')
     }
 
-    const collabFields: string[] = [];
-    const collabValues: any[] = [];
+    const collabFields: string[] = []
+    const collabValues: any[] = []
 
     const collabMapping = {
       bank: 'BANCO',
@@ -201,32 +201,32 @@ export class EmployeeService {
       currency: 'MOEDA',
       status: 'ESTADO',
       userId: 'CODIGO_USUARIO',
-    };
+    }
 
     for (const [key, column] of Object.entries(collabMapping)) {
       if (updatePersonDto[key] !== undefined) {
-        collabFields.push(`${column} = :${collabValues.length + 1}`);
-        collabValues.push(updatePersonDto[key]);
+        collabFields.push(`${column} = :${collabValues.length + 1}`)
+        collabValues.push(updatePersonDto[key])
       }
     }
 
     try {
       if (collabFields.length > 0) {
-        collabValues.push(id);
+        collabValues.push(id)
         await this.dataSource.query(
           `UPDATE GP_COLABORADORES SET ${collabFields.join(', ')} WHERE CODIGO = :${collabValues.length}`,
           collabValues,
-        );
+        )
       }
 
-      return this.findOne(id);
+      return this.findOne(id)
     } catch (error) {
-      this.handleDatabaseError(error, 'atualizar');
+      this.handleDatabaseError(error, 'atualizar')
     }
   }
 
   private handleDatabaseError(error: any, action: string) {
-    console.error(`Error to ${action} employee:`, error);
-    throw new InternalServerErrorException(`Erro ao ${action} colaborador`);
+    console.error(`Error to ${action} employee:`, error)
+    throw new InternalServerErrorException(`Erro ao ${action} colaborador`)
   }
 }

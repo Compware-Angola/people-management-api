@@ -1,7 +1,7 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsIn, IsOptional, IsString } from 'class-validator';
-import { PaginationQueryDto } from 'src/commons/dto/pagination.dto';
+import { ApiPropertyOptional } from '@nestjs/swagger'
+import { Type } from 'class-transformer'
+import { IsIn, IsOptional, IsString } from 'class-validator'
+import { PaginationQueryDto } from 'src/commons/dto/pagination.dto'
 
 export class ListDepartmentsQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional({
@@ -10,7 +10,7 @@ export class ListDepartmentsQueryDto extends PaginationQueryDto {
   })
   @IsOptional()
   @IsString()
-  search?: string;
+  search?: string
 
   @ApiPropertyOptional({
     description: 'Filtrar por estado (1 = ativo, 0 = inativo)',
@@ -19,5 +19,5 @@ export class ListDepartmentsQueryDto extends PaginationQueryDto {
   @IsOptional()
   @Type(() => Number)
   @IsIn([0, 1])
-  status?: number;
+  status?: number
 }
