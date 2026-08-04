@@ -3,9 +3,10 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 import { Department } from './entity/department.entity'
 import { DepartmentsController } from './controllers/depatmnet.controller'
 import { DepartmentsService } from './services/department.service'
+import { UserGroup } from '../permissions/entities/user-group.entity'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Department])],
+  imports: [TypeOrmModule.forFeature([Department,UserGroup])],
   controllers: [DepartmentsController],
   providers: [DepartmentsService],
   exports: [DepartmentsService],

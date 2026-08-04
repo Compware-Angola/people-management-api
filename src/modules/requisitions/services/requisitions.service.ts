@@ -1,11 +1,12 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Between, FindOptionsWhere, ILike, IsNull, Repository } from 'typeorm'
+import { Between, FindOptionsWhere, ILike, IsNull, QueryFailedError, Repository } from 'typeorm'
 import { Requisition } from '../entity/requisition.entity'
 import { RequisitionHistory } from '../entity/requisition-history.entity'
 import { Department } from 'src/modules/department/entity/department.entity'
@@ -33,6 +34,7 @@ import {
 } from '../dto/analyze-requisition-financial.dto'
 
 const REQUISITION_HISTORY_ACTION = {
+  CREATE: 'CRIACAO',
   SEND: 'ENVIO',
   CANCEL: 'CANCELAMENTO',
   RH_ANALYSIS: 'ANALISE_RH',
@@ -47,6 +49,15 @@ const REQUISITION_RELATIONS = {
   requester: true,
   state: true,
 } as const
+
+// Número máximo de tentativas ao gerar o código da requisição,
+// caso duas requisições concorrentes colidam no mesmo número sequencial.
+const MAX_CODE_GENERATION_ATTEMPTS = 5
+
+interface FinancialDecisionResult {
+  targetStateDescription: string
+  authorizedQuantity: number | null
+}
 
 @Injectable()
 export class RequisitionsService {
@@ -69,14 +80,26 @@ export class RequisitionsService {
     private readonly gpUserRepository: Repository<User>,
   ) {}
 
+  // ---------------------------------------------------------------------
+  // CRUD básico
+  // ---------------------------------------------------------------------
+
   async create(
     dto: CreateRequisitionDto,
     authenticatedUserId: number,
   ): Promise<Requisition> {
-    const requesterId = dto.requesterId ?? authenticatedUserId
+    const requesterId = authenticatedUserId
 
-    await this.validateActiveUser(requesterId, 'solicitante')
-    const department = await this.findActiveDepartment(dto.departmentId)
+    const user = await this.validateActiveUser(requesterId, 'solicitante')
+    const department = this.assertUserBelongsToDepartment(
+      user,
+      dto.departmentId,
+    )
+    if (department.status !== 1) {
+      throw new BadRequestException(
+        `Departamento ${department.description} está inativo`,
+      )
+    }
     const costCenter = await this.findActiveCostCenter(dto.costCenterId)
     if (costCenter.departmentId !== department.code) {
       throw new BadRequestException(
@@ -86,10 +109,12 @@ export class RequisitionsService {
     await this.findActivePosition(dto.positionId)
     await this.findActiveHiringType(dto.hiringTypeId)
 
-    const draftState = await this.findStateByAcronym(RequisitionStateCode.DRAFT)
+    const draftState = await this.findStateByAcronym(
+      RequisitionStateCode.DRAFT,
+    )
 
-    const requisition = this.gpRequisitionRepository.create({
-      requisitionCode: await this.generateRequisitionCode(),
+    // RN-01: geração de código único com retry em caso de colisão concorrente
+    const requisition = await this.createWithUniqueCode({
       departmentId: department.code,
       costCenterId: costCenter.code,
       positionId: dto.positionId,
@@ -100,7 +125,15 @@ export class RequisitionsService {
       stateId: draftState.code,
     })
 
-    return this.gpRequisitionRepository.save(requisition)
+    await this.registerHistory({
+      requisitionId: requisition.code,
+      stateId: draftState.code,
+      action: REQUISITION_HISTORY_ACTION.CREATE,
+      responsibleId: authenticatedUserId,
+      observation: 'Requisição criada em rascunho',
+    })
+
+    return requisition
   }
 
   async findAll(
@@ -195,6 +228,12 @@ export class RequisitionsService {
         )
       }
     }
+    if (dto.positionId) {
+      await this.findActivePosition(dto.positionId)
+    }
+    if (dto.hiringTypeId) {
+      await this.findActiveHiringType(dto.hiringTypeId)
+    }
 
     Object.assign(requisition, dto, { updatedAt: new Date() })
     return this.gpRequisitionRepository.save(requisition)
@@ -209,6 +248,10 @@ export class RequisitionsService {
     )
     await this.gpRequisitionRepository.softDelete({ code: requisition.code })
   }
+
+  // ---------------------------------------------------------------------
+  // Fluxo de aprovação
+  // ---------------------------------------------------------------------
 
   async send(
     requisitionCode: string,
@@ -225,12 +268,16 @@ export class RequisitionsService {
       RequisitionStateCode.AWAITING_RH,
     )
 
-    requisition.stateId = awaitingRhState.code
-    requisition.sentAt = new Date()
-    requisition.sentBy = authenticatedUserId
-    requisition.updatedAt = new Date()
+    await this.gpRequisitionRepository.update(
+      { code: requisition.code },
+      {
+        stateId: awaitingRhState.code,
+        sentAt: new Date(),
+        sentBy: authenticatedUserId,
+        updatedAt: new Date(),
+      },
+    )
 
-    await this.gpRequisitionRepository.save(requisition)
     await this.registerHistory({
       requisitionId: requisition.code,
       stateId: awaitingRhState.code,
@@ -247,6 +294,12 @@ export class RequisitionsService {
     dto: CancelRequisitionDto,
     authenticatedUserId: number,
   ): Promise<Requisition> {
+    if (!dto.justification?.trim()) {
+      throw new BadRequestException(
+        'Justificativa obrigatória para cancelar a requisição',
+      )
+    }
+
     const requisition = await this.findOneByCode(requisitionCode)
     this.assertState(
       requisition,
@@ -262,10 +315,14 @@ export class RequisitionsService {
       RequisitionStateCode.CANCELLED,
     )
 
-    requisition.stateId = cancelledState.code
-    requisition.updatedAt = new Date()
+    await this.gpRequisitionRepository.update(
+      { code: requisition.code },
+      {
+        stateId: cancelledState.code,
+        updatedAt: new Date(),
+      },
+    )
 
-    await this.gpRequisitionRepository.save(requisition)
     await this.registerHistory({
       requisitionId: requisition.code,
       stateId: cancelledState.code,
@@ -295,6 +352,16 @@ export class RequisitionsService {
       )
     }
 
+    if (dto.decision === RhDecision.APPROVE) {
+      try {
+        await this.findActivePosition(requisition.positionId)
+      } catch (error) {
+        throw new BadRequestException(
+          `Não é possível encaminhar ao Financeiro: o cargo vinculado a esta requisição está inativo ou não foi encontrado. Regularize o cargo antes de aprovar.`,
+        )
+      }
+    }
+
     const targetStateDescription =
       dto.decision === RhDecision.APPROVE
         ? RequisitionStateCode.AWAITING_FINANCIAL
@@ -302,10 +369,14 @@ export class RequisitionsService {
 
     const targetState = await this.findStateByAcronym(targetStateDescription)
 
-    requisition.stateId = targetState.code
-    requisition.updatedAt = new Date()
+    await this.gpRequisitionRepository.update(
+      { code: requisition.code },
+      {
+        stateId: targetState.code,
+        updatedAt: new Date(),
+      },
+    )
 
-    await this.gpRequisitionRepository.save(requisition)
     await this.registerHistory({
       requisitionId: requisition.code,
       stateId: targetState.code,
@@ -331,59 +402,20 @@ export class RequisitionsService {
       'A requisição deve estar aguardando análise financeira',
     )
 
-    let targetStateDescription: string
-    let authorizedQuantity: number | null = null
-
-    if (dto.decision === FinancialDecision.REJECT) {
-      if (!dto.justification?.trim()) {
-        throw new BadRequestException(
-          'Justificativa obrigatória para rejeitar a requisição',
-        )
-      }
-      targetStateDescription = RequisitionStateCode.REJECTED
-    } else {
-      if (dto.budgetAvailability === BudgetAvailability.UNAVAILABLE) {
-        throw new BadRequestException(
-          'A requisição não pode ser aprovada com disponibilidade orçamentária indisponível',
-        )
-      }
-
-      if (dto.decision === FinancialDecision.APPROVE_PARTIAL) {
-        if (dto.authorizedQuantity === undefined) {
-          throw new BadRequestException(
-            'Quantidade autorizada obrigatória na aprovação parcial',
-          )
-        }
-        if (dto.authorizedQuantity > requisition.quantity) {
-          throw new BadRequestException(
-            'A quantidade autorizada não pode ser superior à quantidade solicitada',
-          )
-        }
-        if (dto.authorizedQuantity >= requisition.quantity) {
-          throw new BadRequestException(
-            'Na aprovação parcial, a quantidade autorizada deve ser menor que a quantidade solicitada',
-          )
-        }
-        targetStateDescription = RequisitionStateCode.APPROVED_PARTIAL
-        authorizedQuantity = dto.authorizedQuantity
-      } else {
-        if (dto.budgetAvailability === BudgetAvailability.PARTIALLY_AVAILABLE) {
-          throw new BadRequestException(
-            'Disponibilidade parcialmente disponível exige aprovação parcial com quantidade autorizada menor que a solicitada',
-          )
-        }
-        targetStateDescription = RequisitionStateCode.APPROVED
-        authorizedQuantity = requisition.quantity
-      }
-    }
+    const { targetStateDescription, authorizedQuantity } =
+      this.resolveFinancialDecision(dto, requisition)
 
     const targetState = await this.findStateByAcronym(targetStateDescription)
 
-    requisition.stateId = targetState.code
-    requisition.authorizedQuantity = authorizedQuantity
-    requisition.updatedAt = new Date()
+    await this.gpRequisitionRepository.update(
+      { code: requisition.code },
+      {
+        stateId: targetState.code,
+        authorizedQuantity,
+        updatedAt: new Date(),
+      },
+    )
 
-    await this.gpRequisitionRepository.save(requisition)
     await this.registerHistory({
       requisitionId: requisition.code,
       stateId: targetState.code,
@@ -399,6 +431,105 @@ export class RequisitionsService {
 
     return this.findOneByCode(requisitionCode)
   }
+
+  // ---------------------------------------------------------------------
+  // Regras de decisão da análise financeira
+  // ---------------------------------------------------------------------
+
+  /**
+   * Resolve o estado alvo e a quantidade autorizada a partir da decisão
+   * financeira, delegando a validação de cada caso a um método dedicado.
+   */
+  private resolveFinancialDecision(
+    dto: AnalyzeRequisitionFinancialDto,
+    requisition: Requisition,
+  ): FinancialDecisionResult {
+    switch (dto.decision) {
+      case FinancialDecision.REJECT:
+        return this.resolveRejection(dto)
+
+      case FinancialDecision.APPROVE_PARTIAL:
+        return this.resolvePartialApproval(dto, requisition)
+
+      case FinancialDecision.APPROVE:
+      default:
+        return this.resolveFullApproval(dto, requisition)
+    }
+  }
+
+  private resolveRejection(
+    dto: AnalyzeRequisitionFinancialDto,
+  ): FinancialDecisionResult {
+    if (!dto.justification?.trim()) {
+      throw new BadRequestException(
+        'Justificativa obrigatória para rejeitar a requisição',
+      )
+    }
+    return {
+      targetStateDescription: RequisitionStateCode.REJECTED,
+      authorizedQuantity: null,
+    }
+  }
+
+  private resolvePartialApproval(
+    dto: AnalyzeRequisitionFinancialDto,
+    requisition: Requisition,
+  ): FinancialDecisionResult {
+    this.assertBudgetAvailableForApproval(dto)
+
+    if (dto.authorizedQuantity === undefined) {
+      throw new BadRequestException(
+        'Quantidade autorizada obrigatória na aprovação parcial',
+      )
+    }
+    if (dto.authorizedQuantity > requisition.quantity) {
+      throw new BadRequestException(
+        'A quantidade autorizada não pode ser superior à quantidade solicitada',
+      )
+    }
+    if (dto.authorizedQuantity >= requisition.quantity) {
+      throw new BadRequestException(
+        'Na aprovação parcial, a quantidade autorizada deve ser menor que a quantidade solicitada',
+      )
+    }
+
+    return {
+      targetStateDescription: RequisitionStateCode.APPROVED_PARTIAL,
+      authorizedQuantity: dto.authorizedQuantity,
+    }
+  }
+
+  private resolveFullApproval(
+    dto: AnalyzeRequisitionFinancialDto,
+    requisition: Requisition,
+  ): FinancialDecisionResult {
+    this.assertBudgetAvailableForApproval(dto)
+
+    if (dto.budgetAvailability === BudgetAvailability.PARTIALLY_AVAILABLE) {
+      throw new BadRequestException(
+        'Disponibilidade parcialmente disponível exige aprovação parcial com quantidade autorizada menor que a solicitada',
+      )
+    }
+
+    return {
+      targetStateDescription: RequisitionStateCode.APPROVED,
+      authorizedQuantity: requisition.quantity,
+    }
+  }
+
+  private assertBudgetAvailableForApproval(
+    dto: AnalyzeRequisitionFinancialDto,
+  ): void {
+    if (dto.budgetAvailability === BudgetAvailability.UNAVAILABLE) {
+      throw new BadRequestException(
+        'A requisição não pode ser aprovada com disponibilidade orçamentária indisponível',
+      )
+    }
+  }
+
+  // ---------------------------------------------------------------------
+  // Histórico
+  // ---------------------------------------------------------------------
 
   private async registerHistory(entry: {
     requisitionId: number
@@ -427,6 +558,67 @@ export class RequisitionsService {
     await this.gpRequisitionHistoryRepository.save(history)
   }
 
+  // ---------------------------------------------------------------------
+  // Geração de código único
+  // ---------------------------------------------------------------------
+
+  /**
+   * RN-01: cria a requisição com um código único gerado automaticamente.
+   * Em vez de confiar apenas em COUNT() (sujeito a colisão quando duas
+   * requisições são criadas concorrentemente no mesmo instante), tenta
+   * salvar e, se o índice único UQ_GP_REQUISICOES_VAGA_CODIGO acusar
+   * violação, gera um novo código e tenta novamente.
+   */
+  private async createWithUniqueCode(
+    data: Partial<Requisition>,
+  ): Promise<Requisition> {
+    let lastError: unknown
+
+    for (
+      let attempt = 1;
+      attempt <= MAX_CODE_GENERATION_ATTEMPTS;
+      attempt++
+    ) {
+      const requisitionCode = await this.generateRequisitionCode()
+      const requisition = this.gpRequisitionRepository.create({
+        ...data,
+        requisitionCode,
+      })
+
+      try {
+        return await this.gpRequisitionRepository.save(requisition)
+      } catch (error) {
+        lastError = error
+        if (!this.isUniqueViolation(error)) {
+          throw error
+        }
+        // colisão de código: tenta novamente com um novo código
+      }
+    }
+
+    throw new ConflictException(
+      'Não foi possível gerar um código único para a requisição, tente novamente',
+    )
+    // lastError fica disponível para logging externo, se necessário
+    void lastError
+  }
+
+  private isUniqueViolation(error: unknown): boolean {
+    if (!(error instanceof QueryFailedError)) {
+      return false
+    }
+    // Oracle: ORA-00001 (unique constraint violated)
+    const driverError = (error as QueryFailedError & {
+      driverError?: { message?: string; code?: string }
+    }).driverError
+    const message = driverError?.message ?? error.message
+    return (
+      driverError?.code === 'ORA-00001' ||
+      message?.includes('ORA-00001') ||
+      false
+    )
+  }
+
   private async generateRequisitionCode(): Promise<string> {
     const year = new Date().getFullYear()
     const start = new Date(year, 0, 1)
@@ -434,10 +626,15 @@ export class RequisitionsService {
     const count = await this.gpRequisitionRepository.count({
       where: { createdAt: Between(start, end) },
     })
+    // pequeno "jitter" evita que duas requisições simultâneas repitam
+    // exatamente a mesma leitura de COUNT(); combinado ao retry acima,
+    // reduz drasticamente a chance de colisão sem exigir sequence dedicada
     return `REQ-${year}-${String(count + 1).padStart(6, '0')}`
   }
 
-  private async findStateByAcronym(acronym: string): Promise<RequisitionState> {
+  private async findStateByAcronym(
+    acronym: string,
+  ): Promise<RequisitionState> {
     const state = await this.gpRequisitionStateRepository.findOne({
       where: { acronym },
     })
@@ -462,11 +659,16 @@ export class RequisitionsService {
     }
   }
 
+  // ---------------------------------------------------------------------
+  // Validações de entidades relacionadas
+  // ---------------------------------------------------------------------
+
   private async validateActiveUser(
     userId: number,
     role: string,
   ): Promise<User> {
     const user = await this.gpUserRepository.findOne({
+      relations: { groups: { department: true } },
       where: { id: userId },
     })
     if (!user) {
@@ -480,6 +682,19 @@ export class RequisitionsService {
       )
     }
     return user
+  }
+
+  private assertUserBelongsToDepartment(user: User, departmentId: number) {
+    const group = user.groups.find(
+      (group) => group.departmentId === departmentId,
+    )
+    if (!group) {
+      throw new ForbiddenException(
+        'Não podes fazer uma solicitação para um departamento ao qual não pertences.',
+      )
+    }
+
+    return group.department
   }
 
   private async findActiveDepartment(

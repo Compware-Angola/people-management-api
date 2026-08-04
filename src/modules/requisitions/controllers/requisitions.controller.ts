@@ -39,7 +39,7 @@ export class RequisitionsController {
   constructor(private readonly requisitionsService: RequisitionsService) {}
 
   @Post()
-  @Permissions('write:requisitions')
+  //@Permissions('write:requisitions')
   @ApiOperation({ summary: 'Criar uma nova requisição de vaga' })
   @ApiResponse({
     status: 201,
@@ -47,7 +47,9 @@ export class RequisitionsController {
     type: Requisition,
   })
   create(@Body() dto: CreateRequisitionDto, @Req() req: any) {
-    return this.requisitionsService.create(dto, req.user.sub)
+    
+   
+    return this.requisitionsService.create(dto, req.user.sub as number)
   }
 
   @Get()

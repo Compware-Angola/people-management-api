@@ -4,10 +4,11 @@ import {
   BadRequestException,
 } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, In } from 'typeorm'
+import { Repository, In, IsNull } from 'typeorm'
 import { Permission } from './entities/permission.entity'
 import { Group } from './entities/group.entity'
 import { User } from '../user/entities/user.entity'
+import { Department } from '../department/entity/department.entity'
 import { UserGroup } from './entities/user-group.entity'
 import { GroupPermission } from './entities/group-permission.entity'
 import { UserPermission } from './entities/user-permission.entity'
@@ -32,6 +33,8 @@ export class PermissionsService {
     private readonly groupRepository: Repository<Group>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Department)
+    private readonly departmentRepository: Repository<Department>,
     @InjectRepository(UserGroup)
     private readonly userGroupRepository: Repository<UserGroup>,
     @InjectRepository(GroupPermission)
@@ -81,15 +84,21 @@ export class PermissionsService {
 
   // Groups
   async createGroup(createGroupDto: CreateGroupDto): Promise<Group> {
+    await this.validateDepartment(createGroupDto.departmentId)
     const group = this.groupRepository.create(createGroupDto)
     return this.groupRepository.save(group)
   }
 
-  async findAllGroups(): Promise<Group[]> {
+  async findAllGroups(departmentId?: number): Promise<Group[]> {
     return this.groupRepository.find({
+      where: {
+        ...(departmentId !== undefined ? { departmentId } : {}),
+      },
       relations: {
+        department: true,
         permissions: true,
       },
+      order: { id: 'DESC' },
     })
   }
 
@@ -100,6 +109,7 @@ export class PermissionsService {
     const group = await this.groupRepository.findOne({
       where: { id },
       relations: {
+        department: true,
         permissions: true,
         users: true,
       },
@@ -115,6 +125,7 @@ export class PermissionsService {
     updateGroupDto: UpdateGroupDto,
   ): Promise<Group> {
     await this.findOneGroup(id)
+    await this.validateDepartment(updateGroupDto.departmentId)
     await this.groupRepository.update(id, updateGroupDto)
     return this.findOneGroup(id)
   }
@@ -222,5 +233,24 @@ export class PermissionsService {
     }
     userPermission.status = updateStatusDto.status
     return this.userPermissionRepository.save(userPermission)
+  }
+
+  private async validateDepartment(departmentId?: number): Promise<void> {
+    if (departmentId === undefined || departmentId === null) {
+      return
+    }
+    const department = await this.departmentRepository.findOne({
+      where: { code: departmentId, deletedAt: IsNull() },
+    })
+    if (!department) {
+      throw new NotFoundException(
+        `Departamento com o código ${departmentId} não encontrado`,
+      )
+    }
+    if (department.status !== 1) {
+      throw new BadRequestException(
+        `Departamento com o código ${departmentId} está inativo`,
+      )
+    }
   }
 }

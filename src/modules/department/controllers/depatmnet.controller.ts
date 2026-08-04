@@ -10,15 +10,20 @@ import {
   ParseIntPipe,
   HttpCode,
   HttpStatus,
+  UseGuards,
+  Req,
 } from '@nestjs/common'
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger'
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger'
 import { DepartmentsService } from '../services/department.service'
 import { Department } from '../entity/department.entity'
 import { CreateDepartmentDto } from '../dto/create-department.dto'
 import { ListDepartmentsQueryDto } from '../dto/list-departments-query.dto'
 import { UpdateDepartmentDto } from '../dto/update-department.dto'
+import { RemoteJwtAuthGuard } from 'src/commons/guards/remote-jwt-auth.guard'
+import { PermissionsGuard } from 'src/commons/guards/permissions.guard'
 
 @ApiTags('Departments')
+@ApiBearerAuth()
 @Controller('departments')
 export class DepartmentsController {
   constructor(private readonly departmentsService: DepartmentsService) {}
@@ -47,6 +52,18 @@ export class DepartmentsController {
     return this.departmentsService.findAll(query)
   }
 
+  @Get('my')
+  @UseGuards(RemoteJwtAuthGuard, PermissionsGuard)
+  @ApiOperation({ summary: 'Buscar um departamento pelo código' })
+  @ApiResponse({
+    status: 200,
+    description: 'Departamento encontrado.',
+    type: [Department],
+  })
+  myDepartments(@Req() req: any) {
+    return this.departmentsService.myDepartment(req.user.sub)
+  }
+  
   @Get(':code')
   @ApiOperation({ summary: 'Buscar um departamento pelo código' })
   @ApiParam({ name: 'code', description: 'Código do departamento', example: 1 })

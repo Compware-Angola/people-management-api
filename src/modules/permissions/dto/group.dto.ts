@@ -18,6 +18,15 @@ export class CreateGroupDto {
   description: string
 
   @ApiPropertyOptional({
+    description:
+      'Departamento a que o grupo pertence (um grupo pertence a um único departamento)',
+    example: 1,
+  })
+  @IsNumber()
+  @IsOptional()
+  departmentId?: number
+
+  @ApiPropertyOptional({
     description: 'Estado do grupo (0 = Inativo, 1 = Ativo)',
     default: 1,
     enum: [0, 1],
@@ -36,6 +45,15 @@ export class UpdateGroupDto {
   @IsString()
   @IsOptional()
   description?: string
+
+  @ApiPropertyOptional({
+    description:
+      'Departamento a que o grupo pertence (um grupo pertence a um único departamento)',
+    example: 1,
+  })
+  @IsNumber()
+  @IsOptional()
+  departmentId?: number
 
   @ApiPropertyOptional({
     description: 'Estado do grupo (0 = Inativo, 1 = Ativo)',

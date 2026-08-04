@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger'
 import { PermissionsService } from './permissions.service'
@@ -27,9 +28,13 @@ export class PermissionsController {
   constructor(private readonly permissionsService: PermissionsService) {}
 
   @Get('groups')
-  @ApiOperation({ summary: 'Listar todos os grupos' })
-  findAllGroups() {
-    return this.permissionsService.findAllGroups()
+  @ApiOperation({
+    summary: 'Listar todos os grupos (filtro opcional por departamento)',
+  })
+  findAllGroups(@Query('departmentId') departmentId?: string) {
+    return this.permissionsService.findAllGroups(
+      departmentId !== undefined ? +departmentId : undefined,
+    )
   }
 
   @Post('groups')

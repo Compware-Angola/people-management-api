@@ -5,9 +5,12 @@ import {
   CreateDateColumn,
   OneToMany,
   ManyToMany,
+  ManyToOne,
+  JoinColumn,
   JoinTable,
 } from 'typeorm'
 import { User } from '../../user/entities/user.entity'
+import { Department } from '../../department/entity/department.entity'
 import { Permission } from './permission.entity'
 import { UserGroup } from './user-group.entity'
 import { GroupPermission } from './group-permission.entity'
@@ -16,6 +19,17 @@ import { GroupPermission } from './group-permission.entity'
 export class Group {
   @PrimaryGeneratedColumn('identity', { name: 'CODIGO' })
   id: number
+
+  @Column({
+    name: 'DEPARTAMENTO_ID',
+    type: 'number',
+    nullable: true,
+  })
+  departmentId: number | null
+
+  @ManyToOne(() => Department, { eager: false })
+  @JoinColumn({ name: 'DEPARTAMENTO_ID' })
+  department: Department
 
   @Column({ name: 'DESCRICAO', unique: true })
   description: string

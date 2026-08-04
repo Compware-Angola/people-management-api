@@ -10,12 +10,15 @@ import { PaginatedResponseDto } from 'src/commons/dto/pagination-response.dto'
 import { UpdateDepartmentDto } from '../dto/update-department.dto'
 import { CreateDepartmentDto } from '../dto/create-department.dto'
 import { ListDepartmentsQueryDto } from '../dto/list-departments-query.dto'
+import { UserGroup } from 'src/modules/permissions/entities/user-group.entity'
 
 @Injectable()
 export class DepartmentsService {
   constructor(
     @InjectRepository(Department)
     private readonly gpDepartmentRepository: Repository<Department>,
+    @InjectRepository(UserGroup)
+    private readonly gpUserGroupRepository: Repository<UserGroup>
   ) {}
 
   async create(dto: CreateDepartmentDto): Promise<Department> {
@@ -80,4 +83,10 @@ export class DepartmentsService {
     const department = await this.findOne(code)
     await this.gpDepartmentRepository.softDelete({ code: department.code })
   }
+  async myDepartment(userId:number) {
+    const response = await  this.gpUserGroupRepository.find({where:{userId,group:{department:{status:1}}},relations:{group:{department:true}}})
+    const departments = response.map(g=> g?.group.department)
+    return {departments}
+  }
 }
+ 

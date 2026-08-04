@@ -60,13 +60,4 @@ export class CreateRequisitionDto {
   @IsInt()
   @IsNotEmpty()
   hiringTypeId: number
-
-  @ApiPropertyOptional({
-    description:
-      'Código do solicitante. Quando ausente, é preenchido automaticamente com o usuário autenticado.',
-    example: 1,
-  })
-  @IsOptional()
-  @IsInt()
-  requesterId?: number
 }
