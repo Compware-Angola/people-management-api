@@ -3,13 +3,13 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
-} from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { CreateAttendanceDto } from './dto/create-attendance.dto';
-import { UpdateAttendanceDto } from './dto/update-attendance.dto';
-import { Attendance } from './entities/attendance.entity';
-import { PaginationQueryDto } from 'src/commons/dto/pagination.dto';
+} from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
+import { CreateAttendanceDto } from './dto/create-attendance.dto'
+import { UpdateAttendanceDto } from './dto/update-attendance.dto'
+import { Attendance } from './entities/attendance.entity'
+import { PaginationQueryDto } from 'src/commons/dto/pagination.dto'
 
 @Injectable()
 export class AttendanceService {
@@ -28,9 +28,9 @@ export class AttendanceService {
           : undefined,
         hours: createAttendanceDto.hours,
         situation: createAttendanceDto.situation,
-      });
+      })
 
-      await this.attendanceRepository.save(attendance);
+      await this.attendanceRepository.save(attendance)
     } catch (error) {
       this.handleDatabaseError(error, 'cadastrar')
     }
@@ -41,7 +41,7 @@ export class AttendanceService {
       order: { id: 'DESC' },
       skip: query.offset,
       take: query.limit,
-    });
+    })
 
     return {
       data,
@@ -55,13 +55,13 @@ export class AttendanceService {
   }
 
   async findOne(id: number) {
-    const attendance = await this.attendanceRepository.findOneBy({ id });
+    const attendance = await this.attendanceRepository.findOneBy({ id })
 
     if (!attendance) {
-      throw new NotFoundException(`Assiduidade com ID ${id} não encontrada`);
+      throw new NotFoundException(`Assiduidade com ID ${id} não encontrada`)
     }
 
-    return attendance;
+    return attendance
   }
 
   async findByEmployee(employeeId: number, query: PaginationQueryDto) {
@@ -70,7 +70,7 @@ export class AttendanceService {
       order: { startDate: 'DESC' },
       skip: query.offset,
       take: query.limit,
-    });
+    })
 
     return {
       data,
@@ -94,30 +94,30 @@ export class AttendanceService {
       endDate: updateAttendanceDto.endDate
         ? new Date(updateAttendanceDto.endDate)
         : attendance.endDate,
-    });
+    })
 
     try {
-      await this.attendanceRepository.save(updatedAttendance);
-      return updatedAttendance;
+      await this.attendanceRepository.save(updatedAttendance)
+      return updatedAttendance
     } catch (error) {
       this.handleDatabaseError(error, 'atualizar')
     }
   }
 
   async remove(id: number) {
-    const attendance = await this.findOne(id);
-    await this.attendanceRepository.remove(attendance);
+    const attendance = await this.findOne(id)
+    await this.attendanceRepository.remove(attendance)
   }
 
   private handleDatabaseError(error: any, action: string) {
-    const message = error?.message || '';
+    const message = error?.message || ''
 
     if (message.includes('FK_GP_ASSIDUIDADES_COLAB')) {
-      throw new BadRequestException('Colaborador informado não existe');
+      throw new BadRequestException('Colaborador informado não existe')
     }
 
     if (message.includes('CK_GP_ASSIDUIDADES_SIT')) {
-      throw new BadRequestException('Situação informada é inválida');
+      throw new BadRequestException('Situação informada é inválida')
     }
 
     throw new InternalServerErrorException(`Erro ao ${action} assiduidade`)

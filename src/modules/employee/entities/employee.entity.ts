@@ -3,31 +3,31 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-} from 'typeorm';
+} from 'typeorm'
 
 @Entity('GP_COLABORADORES')
 export class Employee {
   @PrimaryGeneratedColumn({ name: 'CODIGO' })
-  id: number;
+  id: number
 
   @Column({ name: 'CODIGO_USUARIO' })
-  userId: number;
+  userId: number
 
   @Column({ name: 'BANCO' })
-  bank: string;
+  bank: string
 
   @Column({ name: 'IBAN' })
-  iban: string;
+  iban: string
 
   @Column({ name: 'TITULAR_CONTA' })
-  accountHolder: string;
+  accountHolder: string
 
   @Column({ name: 'MOEDA' })
-  currency: string;
+  currency: string
 
   @Column({ name: 'ESTADO', type: 'number', default: 1 })
-  status: number;
+  status: number
 
   @CreateDateColumn({ name: 'CRIADO_EM', type: 'date' })
-  createdAt: Date;
+  createdAt: Date
 }

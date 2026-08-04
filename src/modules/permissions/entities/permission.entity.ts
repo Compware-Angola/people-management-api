@@ -6,31 +6,37 @@ import {
   OneToMany,
   ManyToMany,
   JoinTable,
-} from 'typeorm';
-import { User } from '../../user/entities/user.entity';
-import { Group } from './group.entity';
-import { UserPermission } from './user-permission.entity';
-import { GroupPermission } from './group-permission.entity';
+} from 'typeorm'
+import { User } from '../../user/entities/user.entity'
+import { Group } from './group.entity'
+import { UserPermission } from './user-permission.entity'
+import { GroupPermission } from './group-permission.entity'
 
 @Entity('GP_PERMISSOES')
 export class Permission {
   @PrimaryGeneratedColumn('identity', { name: 'CODIGO' })
-  id: number;
+  id: number
 
   @Column({ name: 'DESCRICAO', unique: true })
-  description: string;
+  description: string
 
   @Column({ name: 'ESTADO', type: 'number', default: 1 })
-  status: number;
+  status: number
 
   @CreateDateColumn({ name: 'CRIADO_EM', type: 'date' })
-  createdAt: Date;
+  createdAt: Date
 
-  @OneToMany(() => UserPermission, (userPermission) => userPermission.permission)
-  userPermissions: UserPermission[];
+  @OneToMany(
+    () => UserPermission,
+    (userPermission) => userPermission.permission,
+  )
+  userPermissions: UserPermission[]
 
-  @OneToMany(() => GroupPermission, (groupPermission) => groupPermission.permission)
-  groupPermissions: GroupPermission[];
+  @OneToMany(
+    () => GroupPermission,
+    (groupPermission) => groupPermission.permission,
+  )
+  groupPermissions: GroupPermission[]
 
   @ManyToMany(() => User, (user) => user.permissions)
   @JoinTable({
@@ -38,8 +44,8 @@ export class Permission {
     joinColumn: { name: 'CODIGO_PERMISSAO', referencedColumnName: 'id' },
     inverseJoinColumn: { name: 'CODIGO_USUARIO', referencedColumnName: 'id' },
   })
-  users: User[];
+  users: User[]
 
   @ManyToMany(() => Group, (group) => group.permissions)
-  groups: Group[];
+  groups: Group[]
 }

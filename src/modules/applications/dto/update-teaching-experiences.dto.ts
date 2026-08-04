@@ -23,22 +23,34 @@ export class UpdateTeachingExperienceItemDto {
   @IsString()
   course: string
 
-  @ApiProperty({ description: 'Instituição onde leccionou', example: 'Colégio São José' })
+  @ApiProperty({
+    description: 'Instituição onde leccionou',
+    example: 'Colégio São José',
+  })
   @IsNotEmpty()
   @IsString()
   institution: string
 
-  @ApiProperty({ description: 'Disciplina/Actividades', example: 'Álgebra Linear' })
+  @ApiProperty({
+    description: 'Disciplina/Actividades',
+    example: 'Álgebra Linear',
+  })
   @IsNotEmpty()
   @IsString()
   discipline: string
 
-  @ApiProperty({ description: 'Ano de início (YYYY-MM-DD)', example: '2020-12-12' })
+  @ApiProperty({
+    description: 'Ano de início (YYYY-MM-DD)',
+    example: '2020-12-12',
+  })
   @IsNotEmpty()
   @IsString()
   startYear: string
 
-  @ApiProperty({ description: 'Ano de fim (YYYY-MM-DD)', example: '2024-12-12' })
+  @ApiProperty({
+    description: 'Ano de fim (YYYY-MM-DD)',
+    example: '2024-12-12',
+  })
   @IsNotEmpty()
   @IsString()
   endYear: string

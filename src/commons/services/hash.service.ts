@@ -1,12 +1,12 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { EnvService } from 'src/commons/utils/env/env.service';
+import { Injectable, InternalServerErrorException } from '@nestjs/common'
+import { EnvService } from 'src/commons/utils/env/env.service'
 
 @Injectable()
 export class HashService {
-  private readonly hashServiceUrl: string;
+  private readonly hashServiceUrl: string
 
   constructor(private readonly envService: EnvService) {
-    this.hashServiceUrl = this.envService.get('HASH_SERVICE_URL') || '';
+    this.hashServiceUrl = this.envService.get('HASH_SERVICE_URL') || ''
   }
 
   async hash(text: string): Promise<string> {
@@ -17,17 +17,17 @@ export class HashService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ texto: text }),
-      });
+      })
 
       if (!response.ok) {
-        throw new Error(`Hash service returned ${response.status}`);
+        throw new Error(`Hash service returned ${response.status}`)
       }
 
-      const data = await response.json();
-      return data.hash;
+      const data = await response.json()
+      return data.hash
     } catch (error) {
-      console.error('Error calling hash service:', error);
-      throw new InternalServerErrorException('Erro ao gerar hash da senha');
+      console.error('Error calling hash service:', error)
+      throw new InternalServerErrorException('Erro ao gerar hash da senha')
     }
   }
 
@@ -39,17 +39,17 @@ export class HashService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ texto: text, hash }),
-      });
+      })
 
       if (!response.ok) {
-        throw new Error(`Hash service returned ${response.status}`);
+        throw new Error(`Hash service returned ${response.status}`)
       }
 
-      const data = await response.json();
-      return Boolean(data.match ?? data.valid ?? data.isValid);
+      const data = await response.json()
+      return Boolean(data.match ?? data.valid ?? data.isValid)
     } catch (error) {
-      console.error('Error calling hash verify service:', error);
-      throw new InternalServerErrorException('Erro ao verificar a senha');
+      console.error('Error calling hash verify service:', error)
+      throw new InternalServerErrorException('Erro ao verificar a senha')
     }
   }
 }
