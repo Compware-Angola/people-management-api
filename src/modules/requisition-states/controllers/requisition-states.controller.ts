@@ -1,10 +1,14 @@
-import { Controller, Get, Param, Query, ParseIntPipe } from '@nestjs/common'
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger'
+import { Controller, Get, Param, Query, ParseIntPipe, UseGuards } from '@nestjs/common'
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger'
 import { RequisitionStatesService } from '../services/requisition-states.service'
 import { RequisitionState } from '../entity/requisition-state.entity'
 import { ListRequisitionStatesQueryDto } from '../dto/list-requisition-states-query.dto'
+import { RemoteJwtAuthGuard } from 'src/commons/guards/remote-jwt-auth.guard'
+import { PermissionsGuard } from 'src/commons/guards/permissions.guard'
 
 @ApiTags('Requisition States')
+@ApiBearerAuth()
+@UseGuards(RemoteJwtAuthGuard, PermissionsGuard)
 @Controller('requisition-states')
 export class RequisitionStatesController {
   constructor(

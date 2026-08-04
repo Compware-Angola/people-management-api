@@ -24,6 +24,7 @@ import { PermissionsGuard } from 'src/commons/guards/permissions.guard'
 
 @ApiTags('Departments')
 @ApiBearerAuth()
+@UseGuards(RemoteJwtAuthGuard, PermissionsGuard)
 @Controller('departments')
 export class DepartmentsController {
   constructor(private readonly departmentsService: DepartmentsService) {}
@@ -53,8 +54,7 @@ export class DepartmentsController {
   }
 
   @Get('my')
-  @UseGuards(RemoteJwtAuthGuard, PermissionsGuard)
-  @ApiOperation({ summary: 'Buscar um departamento pelo código' })
+@ApiOperation({ summary: 'Buscar um departamento pelo código' })
   @ApiResponse({
     status: 200,
     description: 'Departamento encontrado.',

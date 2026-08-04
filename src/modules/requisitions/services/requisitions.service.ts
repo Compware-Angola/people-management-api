@@ -11,7 +11,7 @@ import { Requisition } from '../entity/requisition.entity'
 import { RequisitionHistory } from '../entity/requisition-history.entity'
 import { Department } from 'src/modules/department/entity/department.entity'
 import { CostCenter } from 'src/modules/cost-center/entity/cost-center.entity'
-import { Position } from 'src/modules/possition/entity/position.entity'
+import { Position } from 'src/modules/Positions/entity/position.entity'
 import { HiringType } from 'src/modules/hiring-types/entity/hiring-type.entity'
 import {
   RequisitionState,
@@ -19,6 +19,13 @@ import {
 } from 'src/modules/requisition-states/entity/requisition-state.entity'
 import { User } from 'src/modules/user/entities/user.entity'
 import { PaginatedResponseDto } from 'src/commons/dto/pagination-response.dto'
+import {
+  RequisitionResponseDto,
+} from '../dto/requisition-response.dto'
+import {
+  toRequisitionResponseDto,
+  toRequisitionResponseDtoList,
+} from './requisitions.mapper'
 import { CreateRequisitionDto } from '../dto/create-requisition.dto'
 import { UpdateRequisitionDto } from '../dto/update-requisition.dto'
 import { ListRequisitionsQueryDto } from '../dto/list-requisitions-query.dto'
@@ -50,8 +57,7 @@ const REQUISITION_RELATIONS = {
   state: true,
 } as const
 
-// Número máximo de tentativas ao gerar o código da requisição,
-// caso duas requisições concorrentes colidam no mesmo número sequencial.
+
 const MAX_CODE_GENERATION_ATTEMPTS = 5
 
 interface FinancialDecisionResult {
@@ -80,14 +86,12 @@ export class RequisitionsService {
     private readonly gpUserRepository: Repository<User>,
   ) {}
 
-  // ---------------------------------------------------------------------
-  // CRUD básico
-  // ---------------------------------------------------------------------
+
 
   async create(
     dto: CreateRequisitionDto,
     authenticatedUserId: number,
-  ): Promise<Requisition> {
+  ): Promise<RequisitionResponseDto> {
     const requesterId = authenticatedUserId
 
     const user = await this.validateActiveUser(requesterId, 'solicitante')
@@ -113,7 +117,7 @@ export class RequisitionsService {
       RequisitionStateCode.DRAFT,
     )
 
-    // RN-01: geração de código único com retry em caso de colisão concorrente
+  
     const requisition = await this.createWithUniqueCode({
       departmentId: department.code,
       costCenterId: costCenter.code,
@@ -133,12 +137,12 @@ export class RequisitionsService {
       observation: 'Requisição criada em rascunho',
     })
 
-    return requisition
+    return toRequisitionResponseDto(requisition)
   }
 
   async findAll(
     query: ListRequisitionsQueryDto,
-  ): Promise<PaginatedResponseDto<Requisition>> {
+  ): Promise<PaginatedResponseDto<RequisitionResponseDto>> {
     const {
       search,
       requesterName,
@@ -185,10 +189,17 @@ export class RequisitionsService {
       take: limit,
     })
 
-    return PaginatedResponseDto.create(data, total, page, limit)
+    return PaginatedResponseDto.create(
+      toRequisitionResponseDtoList(data),
+      total,
+      page,
+      limit,
+    )
   }
 
-  async findOneByCode(requisitionCode: string): Promise<Requisition> {
+  async findOneByCode(
+    requisitionCode: string,
+  ): Promise<RequisitionResponseDto> {
     const requisition = await this.gpRequisitionRepository.findOne({
       where: { requisitionCode, deletedAt: IsNull() },
       relations: {
@@ -205,14 +216,27 @@ export class RequisitionsService {
         `Requisição com o código ${requisitionCode} não encontrada`,
       )
     }
+    return toRequisitionResponseDto(requisition)
+  }
+
+  private async findEntityByCode(requisitionCode: string): Promise<Requisition> {
+    const requisition = await this.gpRequisitionRepository.findOne({
+      where: { requisitionCode, deletedAt: IsNull() },
+      relations: REQUISITION_RELATIONS,
+    })
+    if (!requisition) {
+      throw new NotFoundException(
+        `Requisição com o código ${requisitionCode} não encontrada`,
+      )
+    }
     return requisition
   }
 
   async update(
     requisitionCode: string,
     dto: UpdateRequisitionDto,
-  ): Promise<Requisition> {
-    const requisition = await this.findOneByCode(requisitionCode)
+  ): Promise<RequisitionResponseDto> {
+    const requisition = await this.findEntityByCode(requisitionCode)
     this.assertState(
       requisition,
       [RequisitionStateCode.DRAFT],
@@ -236,11 +260,12 @@ export class RequisitionsService {
     }
 
     Object.assign(requisition, dto, { updatedAt: new Date() })
-    return this.gpRequisitionRepository.save(requisition)
+    const saved = await this.gpRequisitionRepository.save(requisition)
+    return toRequisitionResponseDto(saved)
   }
 
   async remove(requisitionCode: string): Promise<void> {
-    const requisition = await this.findOneByCode(requisitionCode)
+    const requisition = await this.findEntityByCode(requisitionCode)
     this.assertState(
       requisition,
       [RequisitionStateCode.DRAFT],
@@ -249,15 +274,12 @@ export class RequisitionsService {
     await this.gpRequisitionRepository.softDelete({ code: requisition.code })
   }
 
-  // ---------------------------------------------------------------------
-  // Fluxo de aprovação
-  // ---------------------------------------------------------------------
 
   async send(
     requisitionCode: string,
     authenticatedUserId: number,
-  ): Promise<Requisition> {
-    const requisition = await this.findOneByCode(requisitionCode)
+  ): Promise<RequisitionResponseDto> {
+    const requisition = await this.findEntityByCode(requisitionCode)
     this.assertState(
       requisition,
       [RequisitionStateCode.DRAFT],
@@ -293,14 +315,14 @@ export class RequisitionsService {
     requisitionCode: string,
     dto: CancelRequisitionDto,
     authenticatedUserId: number,
-  ): Promise<Requisition> {
+  ): Promise<RequisitionResponseDto> {
     if (!dto.justification?.trim()) {
       throw new BadRequestException(
         'Justificativa obrigatória para cancelar a requisição',
       )
     }
 
-    const requisition = await this.findOneByCode(requisitionCode)
+    const requisition = await this.findEntityByCode(requisitionCode)
     this.assertState(
       requisition,
       [
@@ -338,8 +360,8 @@ export class RequisitionsService {
     requisitionCode: string,
     dto: AnalyzeRequisitionRhDto,
     authenticatedUserId: number,
-  ): Promise<Requisition> {
-    const requisition = await this.findOneByCode(requisitionCode)
+  ): Promise<RequisitionResponseDto> {
+    const requisition = await this.findEntityByCode(requisitionCode)
     this.assertState(
       requisition,
       [RequisitionStateCode.AWAITING_RH],
@@ -394,8 +416,8 @@ export class RequisitionsService {
     requisitionCode: string,
     dto: AnalyzeRequisitionFinancialDto,
     authenticatedUserId: number,
-  ): Promise<Requisition> {
-    const requisition = await this.findOneByCode(requisitionCode)
+  ): Promise<RequisitionResponseDto> {
+    const requisition = await this.findEntityByCode(requisitionCode)
     this.assertState(
       requisition,
       [RequisitionStateCode.AWAITING_FINANCIAL],
@@ -432,14 +454,7 @@ export class RequisitionsService {
     return this.findOneByCode(requisitionCode)
   }
 
-  // ---------------------------------------------------------------------
-  // Regras de decisão da análise financeira
-  // ---------------------------------------------------------------------
 
-  /**
-   * Resolve o estado alvo e a quantidade autorizada a partir da decisão
-   * financeira, delegando a validação de cada caso a um método dedicado.
-   */
   private resolveFinancialDecision(
     dto: AnalyzeRequisitionFinancialDto,
     requisition: Requisition,
@@ -527,10 +542,6 @@ export class RequisitionsService {
     }
   }
 
-  // ---------------------------------------------------------------------
-  // Histórico
-  // ---------------------------------------------------------------------
-
   private async registerHistory(entry: {
     requisitionId: number
     stateId: number
@@ -558,17 +569,7 @@ export class RequisitionsService {
     await this.gpRequisitionHistoryRepository.save(history)
   }
 
-  // ---------------------------------------------------------------------
-  // Geração de código único
-  // ---------------------------------------------------------------------
 
-  /**
-   * RN-01: cria a requisição com um código único gerado automaticamente.
-   * Em vez de confiar apenas em COUNT() (sujeito a colisão quando duas
-   * requisições são criadas concorrentemente no mesmo instante), tenta
-   * salvar e, se o índice único UQ_GP_REQUISICOES_VAGA_CODIGO acusar
-   * violação, gera um novo código e tenta novamente.
-   */
   private async createWithUniqueCode(
     data: Partial<Requisition>,
   ): Promise<Requisition> {
@@ -592,22 +593,21 @@ export class RequisitionsService {
         if (!this.isUniqueViolation(error)) {
           throw error
         }
-        // colisão de código: tenta novamente com um novo código
+        
       }
     }
 
     throw new ConflictException(
       'Não foi possível gerar um código único para a requisição, tente novamente',
     )
-    // lastError fica disponível para logging externo, se necessário
-    void lastError
+   
   }
 
   private isUniqueViolation(error: unknown): boolean {
     if (!(error instanceof QueryFailedError)) {
       return false
     }
-    // Oracle: ORA-00001 (unique constraint violated)
+    
     const driverError = (error as QueryFailedError & {
       driverError?: { message?: string; code?: string }
     }).driverError
@@ -626,9 +626,7 @@ export class RequisitionsService {
     const count = await this.gpRequisitionRepository.count({
       where: { createdAt: Between(start, end) },
     })
-    // pequeno "jitter" evita que duas requisições simultâneas repitam
-    // exatamente a mesma leitura de COUNT(); combinado ao retry acima,
-    // reduz drasticamente a chance de colisão sem exigir sequence dedicada
+    
     return `REQ-${year}-${String(count + 1).padStart(6, '0')}`
   }
 
@@ -659,9 +657,7 @@ export class RequisitionsService {
     }
   }
 
-  // ---------------------------------------------------------------------
-  // Validações de entidades relacionadas
-  // ---------------------------------------------------------------------
+
 
   private async validateActiveUser(
     userId: number,

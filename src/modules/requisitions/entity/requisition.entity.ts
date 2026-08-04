@@ -10,7 +10,7 @@ import {
 } from 'typeorm'
 import { Department } from 'src/modules/department/entity/department.entity'
 import { CostCenter } from 'src/modules/cost-center/entity/cost-center.entity'
-import { Position } from 'src/modules/possition/entity/position.entity'
+import { Position } from 'src/modules/Positions/entity/position.entity'
 import { HiringType } from 'src/modules/hiring-types/entity/hiring-type.entity'
 import { RequisitionState } from 'src/modules/requisition-states/entity/requisition-state.entity'
 import { User } from 'src/modules/user/entities/user.entity'

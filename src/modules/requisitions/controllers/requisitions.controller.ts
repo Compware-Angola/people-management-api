@@ -20,7 +20,7 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger'
 import { RequisitionsService } from '../services/requisitions.service'
-import { Requisition } from '../entity/requisition.entity'
+import { RequisitionResponseDto } from '../dto/requisition-response.dto'
 import { CreateRequisitionDto } from '../dto/create-requisition.dto'
 import { UpdateRequisitionDto } from '../dto/update-requisition.dto'
 import { ListRequisitionsQueryDto } from '../dto/list-requisitions-query.dto'
@@ -39,12 +39,12 @@ export class RequisitionsController {
   constructor(private readonly requisitionsService: RequisitionsService) {}
 
   @Post()
-  //@Permissions('write:requisitions')
+  @Permissions('write:requisitions')
   @ApiOperation({ summary: 'Criar uma nova requisição de vaga' })
   @ApiResponse({
     status: 201,
     description: 'Requisição criada com sucesso.',
-    type: Requisition,
+    type: RequisitionResponseDto,
   })
   create(@Body() dto: CreateRequisitionDto, @Req() req: any) {
     
@@ -61,7 +61,7 @@ export class RequisitionsController {
   @ApiResponse({
     status: 200,
     description: 'Lista paginada de requisições.',
-    type: [Requisition],
+    type: [RequisitionResponseDto],
   })
   findAll(@Query() query: ListRequisitionsQueryDto) {
     return this.requisitionsService.findAll(query)
@@ -78,7 +78,7 @@ export class RequisitionsController {
   @ApiResponse({
     status: 200,
     description: 'Requisição encontrada com histórico do fluxo de aprovação.',
-    type: Requisition,
+    type: RequisitionResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Requisição não encontrada.' })
   findOne(@Param('code') code: string) {
@@ -98,7 +98,7 @@ export class RequisitionsController {
   @ApiResponse({
     status: 200,
     description: 'Requisição atualizada com sucesso.',
-    type: Requisition,
+    type: RequisitionResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Requisição não encontrada.' })
   update(@Param('code') code: string, @Body() dto: UpdateRequisitionDto) {
@@ -133,7 +133,7 @@ export class RequisitionsController {
   @ApiResponse({
     status: 201,
     description: 'Requisição enviada e com estado Aguardando análise do RH.',
-    type: Requisition,
+    type: RequisitionResponseDto,
   })
   send(@Param('code') code: string, @Req() req: any) {
     return this.requisitionsService.send(code, req.user.sub)
@@ -150,7 +150,7 @@ export class RequisitionsController {
   @ApiResponse({
     status: 201,
     description: 'Requisição cancelada com sucesso.',
-    type: Requisition,
+    type: RequisitionResponseDto,
   })
   cancel(
     @Param('code') code: string,
@@ -171,7 +171,7 @@ export class RequisitionsController {
   @ApiResponse({
     status: 201,
     description: 'Análise do RH registrada com sucesso.',
-    type: Requisition,
+    type: RequisitionResponseDto,
   })
   analyzeRh(
     @Param('code') code: string,
@@ -195,7 +195,7 @@ export class RequisitionsController {
   @ApiResponse({
     status: 201,
     description: 'Análise financeira registrada com sucesso.',
-    type: Requisition,
+    type: RequisitionResponseDto,
   })
   analyzeFinancial(
     @Param('code') code: string,

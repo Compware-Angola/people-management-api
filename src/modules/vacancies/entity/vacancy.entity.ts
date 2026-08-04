@@ -7,7 +7,7 @@ import {
   JoinColumn,
   OneToMany,
 } from 'typeorm'
-import { Position } from 'src/modules/possition/entity/position.entity'
+import { Position } from 'src/modules/Positions/entity/position.entity'
 import { Department } from 'src/modules/department/entity/department.entity'
 import { HiringType } from 'src/modules/hiring-types/entity/hiring-type.entity'
 import { VacancyState } from 'src/modules/vacancy-states/entity/vacancy-state.entity'

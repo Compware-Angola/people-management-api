@@ -10,15 +10,20 @@ import {
   ParseIntPipe,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common'
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger'
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger'
 import { CostCentersService } from '../services/cost-centers.service'
 import { CostCenter } from '../entity/cost-center.entity'
 import { CreateCostCenterDto } from '../dto/create-cost-center.dto'
 import { ListCostCentersQueryDto } from '../dto/list-cost-centers-query.dto'
 import { UpdateCostCenterDto } from '../dto/update-cost-center.dto'
+import { RemoteJwtAuthGuard } from 'src/commons/guards/remote-jwt-auth.guard'
+import { PermissionsGuard } from 'src/commons/guards/permissions.guard'
 
 @ApiTags('Cost Centers')
+@ApiBearerAuth()
+@UseGuards(RemoteJwtAuthGuard, PermissionsGuard)
 @Controller('cost-centers')
 export class CostCentersController {
   constructor(private readonly costCentersService: CostCentersService) {}

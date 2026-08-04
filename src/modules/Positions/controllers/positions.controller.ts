@@ -10,21 +10,25 @@ import {
   ParseIntPipe,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common'
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger'
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger'
 import { PositionsService } from '../services/positions.service'
 import { Position } from '../entity/position.entity'
 import { CreatePositionDto } from '../dto/create-position.dto'
 import { ListPositionsQueryDto } from '../dto/list-positions-query.dto'
 import { UpdatePositionDto } from '../dto/update-position.dto'
+import { RemoteJwtAuthGuard } from 'src/commons/guards/remote-jwt-auth.guard'
+import { PermissionsGuard } from 'src/commons/guards/permissions.guard'
 
 @ApiTags('Positions')
 @Controller('positions')
 export class PositionsController {
   constructor(private readonly positionsService: PositionsService) {}
-
-  @Post()
-  @ApiOperation({ summary: 'Criar um novo cargo' })
+@Post()
+@ApiBearerAuth()
+@UseGuards(RemoteJwtAuthGuard, PermissionsGuard)
+@ApiOperation({ summary: 'Criar um novo cargo' })
   @ApiResponse({
     status: 201,
     description: 'Cargo criado com sucesso.',
@@ -61,6 +65,8 @@ export class PositionsController {
   }
 
   @Patch(':code')
+  @ApiBearerAuth()
+@UseGuards(RemoteJwtAuthGuard, PermissionsGuard)
   @ApiOperation({ summary: 'Atualizar um cargo' })
   @ApiParam({ name: 'code', description: 'Código do cargo', example: 1 })
   @ApiResponse({
@@ -77,6 +83,8 @@ export class PositionsController {
   }
 
   @Delete(':code')
+  @ApiBearerAuth()
+@UseGuards(RemoteJwtAuthGuard, PermissionsGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Remover um cargo' })
   @ApiParam({ name: 'code', description: 'Código do cargo', example: 1 })

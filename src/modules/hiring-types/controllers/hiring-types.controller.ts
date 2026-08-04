@@ -1,10 +1,14 @@
-import { Controller, Get, Param, Query, ParseIntPipe } from '@nestjs/common'
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger'
+import { Controller, Get, Param, Query, ParseIntPipe, UseGuards } from '@nestjs/common'
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger'
 import { HiringTypesService } from '../services/hiring-types.service'
 import { HiringType } from '../entity/hiring-type.entity'
 import { ListHiringTypesQueryDto } from '../dto/list-hiring-types-query.dto'
+import { RemoteJwtAuthGuard } from 'src/commons/guards/remote-jwt-auth.guard'
+import { PermissionsGuard } from 'src/commons/guards/permissions.guard'
 
 @ApiTags('Hiring Types')
+@ApiBearerAuth()
+@UseGuards(RemoteJwtAuthGuard, PermissionsGuard)
 @Controller('hiring-types')
 export class HiringTypesController {
   constructor(private readonly hiringTypesService: HiringTypesService) {}
