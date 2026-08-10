@@ -68,7 +68,7 @@ export class TeacherApplicationsService {
     @InjectRepository(AcademicDegreeEntity)
     private readonly academicDegreeRepository: Repository<AcademicDegreeEntity>,
     private readonly httpService: HttpService,
-  ) {}
+  ) { }
 
   async create(payload: CreateApplicationPayload) {
     const { personal, academic, experience, files } = payload
@@ -302,13 +302,13 @@ export class TeacherApplicationsService {
       }),
       statusIds.length
         ? this.applicationStatusRepository.find({
-            where: { id: In(statusIds) },
-          })
+          where: { id: In(statusIds) },
+        })
         : Promise.resolve([]),
       academicDegreeIds.length
         ? this.academicDegreeRepository.find({
-            where: { id: In(academicDegreeIds) },
-          })
+          where: { id: In(academicDegreeIds) },
+        })
         : Promise.resolve([]),
     ])
 
@@ -325,21 +325,21 @@ export class TeacherApplicationsService {
       },
       applicationStatus: candidate.applicationStatusId
         ? {
-            id: candidate.applicationStatusId,
-            description:
-              statusMap.get(candidate.applicationStatusId)?.description ?? null,
-          }
+          id: candidate.applicationStatusId,
+          description:
+            statusMap.get(candidate.applicationStatusId)?.description ?? null,
+        }
         : null,
       academicDegree: candidate.academicDegreeId
         ? {
-            id: candidate.academicDegreeId,
-            designation:
-              academicDegreeMap.get(candidate.academicDegreeId)?.designation ??
-              null,
-            acronym:
-              academicDegreeMap.get(candidate.academicDegreeId)?.acronym ??
-              null,
-          }
+          id: candidate.academicDegreeId,
+          designation:
+            academicDegreeMap.get(candidate.academicDegreeId)?.designation ??
+            null,
+          acronym:
+            academicDegreeMap.get(candidate.academicDegreeId)?.acronym ??
+            null,
+        }
         : null,
       academicEducations: academicEducations.filter(
         (item) => item.candidateId === candidate.id,
@@ -630,27 +630,27 @@ export class TeacherApplicationsService {
       documentTypeId: number
       file: ApplicationFile
     }> = [
-      {
-        documentTypeId: personal.documentType,
-        file: files.identificationDocument,
-      },
-      {
-        documentTypeId: TipoDocumentoNecessario.CURRICULUM_VITAE,
-        file: files.cv,
-      },
-      {
-        documentTypeId: TipoDocumentoNecessario.CERTIFICADO,
-        file: files.courseCertificate,
-      },
-      {
-        documentTypeId: TipoDocumentoNecessario.DECLARACAO_FORMACAO_PEDAGOGICA,
-        file: files.pedagogicalAggregation,
-      },
-      ...files.certificates.map((certificate) => ({
-        documentTypeId: TipoDocumentoNecessario.CERTIFICADO,
-        file: certificate,
-      })),
-    ]
+        {
+          documentTypeId: personal.documentType,
+          file: files.identificationDocument,
+        },
+        {
+          documentTypeId: TipoDocumentoNecessario.CURRICULUM_VITAE,
+          file: files.cv,
+        },
+        {
+          documentTypeId: TipoDocumentoNecessario.CERTIFICADO,
+          file: files.courseCertificate,
+        },
+        {
+          documentTypeId: TipoDocumentoNecessario.DECLARACAO_FORMACAO_PEDAGOGICA,
+          file: files.pedagogicalAggregation,
+        },
+        ...files.certificates.map((certificate) => ({
+          documentTypeId: TipoDocumentoNecessario.CERTIFICADO,
+          file: certificate,
+        })),
+      ]
 
     const uploaded: Array<{ documentTypeId: number; fileName: string }> = []
 
