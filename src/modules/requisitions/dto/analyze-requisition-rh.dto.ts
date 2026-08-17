@@ -1,10 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator'
-
-export enum RhDecision {
-  APPROVE = 'APROVAR',
-  REJECT = 'REJEITAR',
-}
+import { RhDecision } from '../constants'
 
 export class AnalyzeRequisitionRhDto {
   @ApiProperty({
@@ -13,8 +9,7 @@ export class AnalyzeRequisitionRhDto {
     example: RhDecision.APPROVE,
   })
   @IsEnum(RhDecision)
-  decision: RhDecision
-
+  declare decision: RhDecision
   @ApiPropertyOptional({
     description:
       'Justificativa/observação. Obrigatória quando a decisão for REJEITAR.',
@@ -24,9 +19,9 @@ export class AnalyzeRequisitionRhDto {
   @IsOptional()
   @IsString()
   @MaxLength(2000)
-  justification?: string
+  declare justification: string
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     description: 'Parecer do RH',
     example: 'Solicitação completa e alinhada ao planejamento de pessoal.',
     maxLength: 2000,
@@ -34,5 +29,5 @@ export class AnalyzeRequisitionRhDto {
   @IsOptional()
   @IsString()
   @MaxLength(2000)
-  opinion?: string
+  declare opinion: string
 }

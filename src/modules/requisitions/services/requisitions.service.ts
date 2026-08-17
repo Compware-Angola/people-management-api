@@ -6,7 +6,14 @@ import {
   NotFoundException,
 } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Between, FindOptionsWhere, ILike, IsNull, QueryFailedError, Repository } from 'typeorm'
+import {
+  Between,
+  FindOptionsWhere,
+  ILike,
+  IsNull,
+  QueryFailedError,
+  Repository,
+} from 'typeorm'
 import { Requisition } from '../entity/requisition.entity'
 import { RequisitionHistory } from '../entity/requisition-history.entity'
 import { Department } from 'src/modules/department/entity/department.entity'
@@ -19,9 +26,7 @@ import {
 } from 'src/modules/requisition-states/entity/requisition-state.entity'
 import { User } from 'src/modules/user/entities/user.entity'
 import { PaginatedResponseDto } from 'src/commons/dto/pagination-response.dto'
-import {
-  RequisitionResponseDto,
-} from '../dto/requisition-response.dto'
+import { RequisitionResponseDto } from '../dto/requisition-response.dto'
 import {
   toRequisitionResponseDto,
   toRequisitionResponseDtoList,
@@ -39,26 +44,11 @@ import {
   BudgetAvailability,
   FinancialDecision,
 } from '../dto/analyze-requisition-financial.dto'
-
-const REQUISITION_HISTORY_ACTION = {
-  CREATE: 'CRIACAO',
-  SEND: 'ENVIO',
-  CANCEL: 'CANCELAMENTO',
-  RH_ANALYSIS: 'ANALISE_RH',
-  FINANCIAL_ANALYSIS: 'ANALISE_FINANCEIRA',
-} as const
-
-const REQUISITION_RELATIONS = {
-  department: true,
-  costCenter: true,
-  position: true,
-  hiringType: true,
-  requester: true,
-  state: true,
-} as const
-
-
-const MAX_CODE_GENERATION_ATTEMPTS = 5
+import {
+  MAX_CODE_GENERATION_ATTEMPTS,
+  REQUISITION_HISTORY_ACTION,
+  REQUISITION_RELATIONS,
+} from '../constants'
 
 interface FinancialDecisionResult {
   targetStateDescription: string
@@ -86,8 +76,6 @@ export class RequisitionsService {
     private readonly gpUserRepository: Repository<User>,
   ) {}
 
-
-
   async create(
     dto: CreateRequisitionDto,
     authenticatedUserId: number,
@@ -113,11 +101,8 @@ export class RequisitionsService {
     await this.findActivePosition(dto.positionId)
     await this.findActiveHiringType(dto.hiringTypeId)
 
-    const draftState = await this.findStateByAcronym(
-      RequisitionStateCode.DRAFT,
-    )
+    const draftState = await this.findStateByAcronym(RequisitionStateCode.DRAFT)
 
-  
     const requisition = await this.createWithUniqueCode({
       departmentId: department.code,
       costCenterId: costCenter.code,
@@ -219,7 +204,9 @@ export class RequisitionsService {
     return toRequisitionResponseDto(requisition)
   }
 
-  private async findEntityByCode(requisitionCode: string): Promise<Requisition> {
+  private async findEntityByCode(
+    requisitionCode: string,
+  ): Promise<Requisition> {
     const requisition = await this.gpRequisitionRepository.findOne({
       where: { requisitionCode, deletedAt: IsNull() },
       relations: REQUISITION_RELATIONS,
@@ -273,7 +260,6 @@ export class RequisitionsService {
     )
     await this.gpRequisitionRepository.softDelete({ code: requisition.code })
   }
-
 
   async send(
     requisitionCode: string,
@@ -454,7 +440,6 @@ export class RequisitionsService {
     return this.findOneByCode(requisitionCode)
   }
 
-
   private resolveFinancialDecision(
     dto: AnalyzeRequisitionFinancialDto,
     requisition: Requisition,
@@ -569,17 +554,10 @@ export class RequisitionsService {
     await this.gpRequisitionHistoryRepository.save(history)
   }
 
-
   private async createWithUniqueCode(
     data: Partial<Requisition>,
   ): Promise<Requisition> {
-    let lastError: unknown
-
-    for (
-      let attempt = 1;
-      attempt <= MAX_CODE_GENERATION_ATTEMPTS;
-      attempt++
-    ) {
+    for (let attempt = 1; attempt <= MAX_CODE_GENERATION_ATTEMPTS; attempt++) {
       const requisitionCode = await this.generateRequisitionCode()
       const requisition = this.gpRequisitionRepository.create({
         ...data,
@@ -589,28 +567,27 @@ export class RequisitionsService {
       try {
         return await this.gpRequisitionRepository.save(requisition)
       } catch (error) {
-        lastError = error
         if (!this.isUniqueViolation(error)) {
           throw error
         }
-        
       }
     }
 
     throw new ConflictException(
       'Não foi possível gerar um código único para a requisição, tente novamente',
     )
-   
   }
 
   private isUniqueViolation(error: unknown): boolean {
     if (!(error instanceof QueryFailedError)) {
       return false
     }
-    
-    const driverError = (error as QueryFailedError & {
-      driverError?: { message?: string; code?: string }
-    }).driverError
+
+    const driverError = (
+      error as QueryFailedError & {
+        driverError?: { message?: string; code?: string }
+      }
+    ).driverError
     const message = driverError?.message ?? error.message
     return (
       driverError?.code === 'ORA-00001' ||
@@ -626,13 +603,11 @@ export class RequisitionsService {
     const count = await this.gpRequisitionRepository.count({
       where: { createdAt: Between(start, end) },
     })
-    
+
     return `REQ-${year}-${String(count + 1).padStart(6, '0')}`
   }
 
-  private async findStateByAcronym(
-    acronym: string,
-  ): Promise<RequisitionState> {
+  private async findStateByAcronym(acronym: string): Promise<RequisitionState> {
     const state = await this.gpRequisitionStateRepository.findOne({
       where: { acronym },
     })
@@ -656,8 +631,6 @@ export class RequisitionsService {
       throw new BadRequestException(message)
     }
   }
-
-
 
   private async validateActiveUser(
     userId: number,

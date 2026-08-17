@@ -15,7 +15,7 @@ export class CreateCostCenterDto {
   })
   @IsInt()
   @IsNotEmpty()
-  departmentId: number
+  declare departmentId: number
 
   @ApiProperty({
     description: 'Descrição do centro de custo',
@@ -25,7 +25,7 @@ export class CreateCostCenterDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(150)
-  description: string
+  declare description: string
 
   @ApiPropertyOptional({
     description: 'Estado do centro de custo (1 = ativo, 0 = inativo)',
