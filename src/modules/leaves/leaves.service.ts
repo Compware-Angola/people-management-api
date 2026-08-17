@@ -3,13 +3,13 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
-} from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
-import { CreateLeaveDto } from './dto/create-leave.dto';
-import { UpdateLeaveDto, LeaveStatus } from './dto/update-leave.dto';
-import { LeaveQueryDto } from './dto/leave-query.dto';
-import { Leave } from './entities/leave.entity';
+} from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository, LessThanOrEqual, MoreThanOrEqual } from 'typeorm'
+import { CreateLeaveDto } from './dto/create-leave.dto'
+import { UpdateLeaveDto, LeaveStatus } from './dto/update-leave.dto'
+import { LeaveQueryDto } from './dto/leave-query.dto'
+import { Leave } from './entities/leave.entity'
 
 @Injectable()
 export class LeavesService {
@@ -22,7 +22,7 @@ export class LeavesService {
     if (new Date(createDto.endDate) <= new Date(createDto.startDate)) {
       throw new BadRequestException(
         'A data de fim deve ser superior à data de início',
-      );
+      )
     }
 
     try {
@@ -34,36 +34,36 @@ export class LeavesService {
         documentId: createDto.documentId,
         observation: createDto.observation,
         status: LeaveStatus.PENDING,
-      });
+      })
 
-      await this.leaveRepository.save(leave);
+      await this.leaveRepository.save(leave)
     } catch (error) {
-      this.handleDatabaseError(error, 'registrar licença');
+      this.handleDatabaseError(error, 'registrar licença')
     }
   }
 
   async findAll(query: LeaveQueryDto) {
-    const where: any = {};
+    const where: any = {}
 
     if (query.employeeId) {
-      where.employeeId = query.employeeId;
+      where.employeeId = query.employeeId
     }
 
     if (query.type) {
-      where.type = query.type;
+      where.type = query.type
     }
 
     if (query.status) {
-      where.status = query.status;
+      where.status = query.status
     }
 
     if (query.startDate && query.endDate) {
-      where.startDate = MoreThanOrEqual(new Date(query.startDate));
-      where.endDate = LessThanOrEqual(new Date(query.endDate));
+      where.startDate = MoreThanOrEqual(new Date(query.startDate))
+      where.endDate = LessThanOrEqual(new Date(query.endDate))
     } else if (query.startDate) {
-      where.startDate = MoreThanOrEqual(new Date(query.startDate));
+      where.startDate = MoreThanOrEqual(new Date(query.startDate))
     } else if (query.endDate) {
-      where.endDate = LessThanOrEqual(new Date(query.endDate));
+      where.endDate = LessThanOrEqual(new Date(query.endDate))
     }
 
     const [data, total] = await this.leaveRepository.findAndCount({
@@ -71,7 +71,7 @@ export class LeavesService {
       order: { id: 'DESC' },
       skip: query.offset,
       take: query.limit,
-    });
+    })
 
     return {
       data,
@@ -81,7 +81,7 @@ export class LeavesService {
         total,
         totalPages: Math.ceil(total / query.limit),
       },
-    };
+    }
   }
 
   async update(id: number, updateDto: UpdateLeaveDto, approverId: number) {
@@ -92,13 +92,13 @@ export class LeavesService {
     ) {
       throw new BadRequestException(
         `Observação é obrigatória quando o estado é ${updateDto.status}`,
-      );
+      )
     }
 
-    const leave = await this.leaveRepository.findOneBy({ id });
+    const leave = await this.leaveRepository.findOneBy({ id })
 
     if (!leave) {
-      throw new NotFoundException(`Licença com código ${id} não encontrada`);
+      throw new NotFoundException(`Licença com código ${id} não encontrada`)
     }
 
     try {
@@ -106,25 +106,28 @@ export class LeavesService {
         status: updateDto.status,
         approverId,
         observation: updateDto.observation,
-      });
+      })
     } catch (error) {
-      this.handleDatabaseError(error, 'atualizar licença');
+      this.handleDatabaseError(error, 'atualizar licença')
     }
   }
 
   private handleDatabaseError(error: any, action: string) {
-    console.error(`Erro ao ${action}:`, error);
+    console.error(`Erro ao ${action}:`, error)
 
-    const message = error?.message || '';
+    const message = error?.message || ''
 
     if (error.code === 'ORA-00001' || message.includes('unique constraint')) {
-      throw new BadRequestException(`Erro de duplicidade ao ${action}`);
+      throw new BadRequestException(`Erro de duplicidade ao ${action}`)
     }
-    if (error.code === 'ORA-02291' || message.includes('foreign key constraint')) {
+    if (
+      error.code === 'ORA-02291' ||
+      message.includes('foreign key constraint')
+    ) {
       throw new BadRequestException(
         `Erro de integridade (chave estrangeira) ao ${action}`,
-      );
+      )
     }
-    throw new InternalServerErrorException(`Erro interno ao ${action}`);
+    throw new InternalServerErrorException(`Erro interno ao ${action}`)
   }
 }

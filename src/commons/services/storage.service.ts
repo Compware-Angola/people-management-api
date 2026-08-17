@@ -43,7 +43,9 @@ export class StorageService {
       this.logger.error(
         `Upload falhou: ${response.status} ${response.statusText}`,
       )
-      throw new InternalServerErrorException('Não foi possível enviar o ficheiro')
+      throw new InternalServerErrorException(
+        'Não foi possível enviar o ficheiro',
+      )
     }
 
     const data = (await response.json()) as ResponseUpload

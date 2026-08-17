@@ -10,16 +10,16 @@ import {
   Query,
   Delete,
   UseGuards,
-} from '@nestjs/common';
-import { EmployeeService } from './employee.service';
-import { CreateEmployeeDto } from './dto/create-employee.dto';
-import { UpdateEmployeeDto } from './dto/update-employee.dto';
-import { EmployeeQueryDto } from './dto/employee-query.dto';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { CreateFileDto } from './dto/file/create-file.dto';
-import { RemoteJwtAuthGuard } from '../../commons/guards/remote-jwt-auth.guard';
-import { PermissionsGuard } from '../../commons/guards/permissions.guard';
-import { Permissions } from '../../commons/decorators/permissions.decorator';
+} from '@nestjs/common'
+import { EmployeeService } from './employee.service'
+import { CreateEmployeeDto } from './dto/create-employee.dto'
+import { UpdateEmployeeDto } from './dto/update-employee.dto'
+import { EmployeeQueryDto } from './dto/employee-query.dto'
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger'
+import { CreateFileDto } from './dto/file/create-file.dto'
+import { RemoteJwtAuthGuard } from '../../commons/guards/remote-jwt-auth.guard'
+import { PermissionsGuard } from '../../commons/guards/permissions.guard'
+import { Permissions } from '../../commons/decorators/permissions.decorator'
 
 @Controller('employees')
 @ApiTags('Employees')
@@ -33,7 +33,7 @@ export class EmployeeController {
   @Permissions('write:employees')
   @ApiOperation({ summary: 'Criar um novo colaborador' })
   async create(@Body() createEmployeeDto: CreateEmployeeDto) {
-    return this.employeeService.create(createEmployeeDto);
+    return this.employeeService.create(createEmployeeDto)
   }
 
   @Get()
@@ -53,8 +53,11 @@ export class EmployeeController {
   @Patch(':id')
   @Permissions('write:employees')
   @ApiOperation({ summary: 'Atualizar um colaborador' })
-  update(@Param('id') id: string, @Body() updateEmployeeDto: UpdateEmployeeDto) {
-    return this.employeeService.update(+id, updateEmployeeDto);
+  update(
+    @Param('id') id: string,
+    @Body() updateEmployeeDto: UpdateEmployeeDto,
+  ) {
+    return this.employeeService.update(+id, updateEmployeeDto)
   }
 
   @Post('files')
@@ -62,7 +65,7 @@ export class EmployeeController {
   @Permissions('write:employees')
   @ApiOperation({ summary: 'Adicionar arquivo ao colaborador' })
   async addFile(@Body() createFileDto: CreateFileDto) {
-    return this.employeeService.addFile(createFileDto);
+    return this.employeeService.addFile(createFileDto)
   }
 
   @Delete('files/:id')
