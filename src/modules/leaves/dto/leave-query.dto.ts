@@ -1,16 +1,16 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsNumber, IsString, IsEnum } from 'class-validator';
-import { Type } from 'class-transformer';
-import { PaginationQueryDto } from '../../../commons/dto/pagination.dto';
-import { LeaveType } from './create-leave.dto';
-import { LeaveStatus } from './update-leave.dto';
+import { ApiPropertyOptional } from '@nestjs/swagger'
+import { IsOptional, IsNumber, IsString, IsEnum } from 'class-validator'
+import { Type } from 'class-transformer'
+import { PaginationQueryDto } from '../../../commons/dto/pagination.dto'
+import { LeaveType } from './create-leave.dto'
+import { LeaveStatus } from './update-leave.dto'
 
 export class LeaveQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional({ description: 'Filtrar por código do colaborador' })
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
-  employeeId?: number;
+  employeeId?: number
 
   @ApiPropertyOptional({
     description: 'Filtrar por tipo',
@@ -18,7 +18,7 @@ export class LeaveQueryDto extends PaginationQueryDto {
   })
   @IsOptional()
   @IsEnum(LeaveType)
-  type?: LeaveType;
+  type?: LeaveType
 
   @ApiPropertyOptional({
     description: 'Filtrar por estado',
@@ -26,7 +26,7 @@ export class LeaveQueryDto extends PaginationQueryDto {
   })
   @IsOptional()
   @IsEnum(LeaveStatus)
-  status?: LeaveStatus;
+  status?: LeaveStatus
 
   @ApiPropertyOptional({
     description: 'Data de início do período (YYYY-MM-DD)',
@@ -34,7 +34,7 @@ export class LeaveQueryDto extends PaginationQueryDto {
   })
   @IsOptional()
   @IsString()
-  startDate?: string;
+  startDate?: string
 
   @ApiPropertyOptional({
     description: 'Data de fim do período (YYYY-MM-DD)',
@@ -42,5 +42,5 @@ export class LeaveQueryDto extends PaginationQueryDto {
   })
   @IsOptional()
   @IsString()
-  endDate?: string;
+  endDate?: string
 }

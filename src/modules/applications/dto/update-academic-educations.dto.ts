@@ -28,7 +28,10 @@ export class UpdateAcademicEducationItemDto {
   @IsString()
   academicLevel: string
 
-  @ApiProperty({ description: 'Instituição de ensino', example: 'Universidade Agostinho Neto' })
+  @ApiProperty({
+    description: 'Instituição de ensino',
+    example: 'Universidade Agostinho Neto',
+  })
   @IsNotEmpty()
   @IsString()
   institution: string

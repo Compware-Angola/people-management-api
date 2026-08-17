@@ -24,7 +24,7 @@ export class CreateFileDto {
   @ApiProperty({ example: 1, description: 'ID do usu[ario' })
   @IsNumber()
   @IsNotEmpty()
-  userId: number;
+  userId: number
 
   @ApiProperty({ enum: FileType, example: 'BI' })
   @IsEnum(FileType)

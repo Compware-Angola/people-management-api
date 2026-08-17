@@ -1,5 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { ConflictException, ForbiddenException, Injectable, InternalServerErrorException } from '@nestjs/common'
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common'
 import { CreateApplicationPayload } from './types/create-application-payload.type'
 import { StorageService } from '../../../commons/services/storage.service'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -63,425 +68,441 @@ export class TeacherApplicationsService {
     @InjectRepository(AcademicDegreeEntity)
     private readonly academicDegreeRepository: Repository<AcademicDegreeEntity>,
     private readonly httpService: HttpService,
-  ) {}
+  ) { }
 
   async create(payload: CreateApplicationPayload) {
-  const { personal, academic, experience, files } = payload
+    const { personal, academic, experience, files } = payload
 
-  let hashPassword: string
-  try {
-    hashPassword = await this.hashService.hash(personal.documentNumber)
-  } catch (error) {
-    throw new InternalServerErrorException('Falha ao processar o cadastro.')
-  }
+    let hashPassword: string
+    try {
+      hashPassword = await this.hashService.hash(personal.documentNumber)
+    } catch (error) {
+      throw new InternalServerErrorException('Falha ao processar o cadastro.')
+    }
 
-  const [
-    personByEmail,
-    personByDocumentNumber,
-    personByPhone,
-    documentType,
-    userByEmail,
-    userByDocumentNumber,
-  ] = await Promise.all([
-    this.findPersonByEmail(personal.email),
-    this.findPersonByDocumentNumber(personal.documentNumber),
-    this.findPersonByPhone(personal.phone, personal.alternativePhone ?? null),
-    this.documentType(personal.documentType),
-    this.findUserByEmail(personal.email),
-    this.findUserByDocumentNumber(personal.documentNumber),
-  ])
+    const [
+      personByEmail,
+      personByDocumentNumber,
+      personByPhone,
+      documentType,
+      userByEmail,
+      userByDocumentNumber,
+    ] = await Promise.all([
+      this.findPersonByEmail(personal.email),
+      this.findPersonByDocumentNumber(personal.documentNumber),
+      this.findPersonByPhone(personal.phone, personal.alternativePhone ?? null),
+      this.documentType(personal.documentType),
+      this.findUserByEmail(personal.email),
+      this.findUserByDocumentNumber(personal.documentNumber),
+    ])
 
-  if (personByEmail || userByEmail) {
-    throw new ConflictException(
-      'O endereço de e-mail informado já está associado a um candidato cadastrado.',
-    )
-  }
-  if (personByDocumentNumber || userByDocumentNumber) {
-    throw new ConflictException(
-      `O número de ${documentType ?? 'documento'} informado já está associado a um candidato cadastrado.`,
-    )
-  }
-  if (personByPhone) {
-    throw new ConflictException(
-      'O número de telefone informado já está associado a um candidato cadastrado.',
-    )
-  }
-  if (personal.alternativePhone && personal.alternativePhone === personal.phone) {
-    throw new ConflictException(
-      'O telefone alternativo não pode ser igual ao telefone principal.',
-    )
-  }
-
-  const uploadedFiles = await this.uploadAllApplicationFiles(personal, files)
-
-  try {
-    const savedCandidate = await this.datasource.transaction(async (manager) => {
-      const personRepository = manager.getRepository(PersonEntity)
-      const candidateRepository = manager.getRepository(CandidateEntity)
-      const academicEducationEntity = manager.getRepository(AcademicEducationEntity)
-      const teachingExperienceEntity = manager.getRepository(TeachingExperienceEntity)
-      const documentRepository = manager.getRepository(TeacherApplicationDocument)
-      const userRepository = manager.getRepository(User)
-
-      const person = personRepository.create({
-        nationalityId: personal.nationality,
-        email: personal.email,
-        alternativePhone: personal.alternativePhone ?? null,
-        fullName: personal.fullName,
-        address: personal.address,
-        genderId: personal.gender,
-        documentNumber: personal.documentNumber,
-        documentTypeId: personal.documentType,
-        maritalStatusId: personal.maritalStatus,
-        phone: personal.phone,
-        documentExpirationDate: personal.documentExpiration,
-        activeState: 1,
-        birthDate: personal.birthDate,
-        createdAt: new Date(),
-      })
-      const savedPerson = await personRepository.save(person)
-
-      await userRepository.save({
-        name: personal.fullName,
-        email: personal.email,
-        bi: personal.documentNumber,
-        phone: personal.phone,
-        alternativePhone: personal.alternativePhone,
-        address: personal.address,
-        password: hashPassword,
-        province: 'unknown',
-        district: 'unknown',
-        municipality: 'unknown',
-      })
-
-      const candidate = candidateRepository.create({
-        applicationDate: new Date(),
-        person: JSON.stringify({
-          pk_pessoa: savedPerson.id,
-          nome_completo: savedPerson.fullName,
-        }),
-        applicationStatusId: 8,
-        academicDegreeId: academic[0].academicLevel,
-      })
-      const savedCandidate = await candidateRepository.save(candidate)
-
-      const academicEntities = academic.map((item) =>
-        academicEducationEntity.create({
-          graduationYear: Number(item.completionYear),
-          candidateId: savedCandidate.id,
-          academicDegreeId: item.academicLevel,
-          institution: item.institution,
-          courseTrainingAreaId: item.course,
-        }),
+    if (personByEmail || userByEmail) {
+      throw new ConflictException(
+        'O endereço de e-mail informado já está associado a um candidato cadastrado.',
       )
-      if (academicEntities.length) {
-        await academicEducationEntity.save(academicEntities)
-      }
-
-      const experienceEntities = experience.map((item) =>
-        teachingExperienceEntity.create({
-          candidateId: savedCandidate.id,
-          endYear: item.endYear,
-          startYear: item.startYear,
-          institution: item.institution,
-          discipline: item.discipline,
-          course: item.course,
-        }),
+    }
+    if (personByDocumentNumber || userByDocumentNumber) {
+      throw new ConflictException(
+        `O número de ${documentType ?? 'documento'} informado já está associado a um candidato cadastrado.`,
       )
-      if (experienceEntities.length) {
-        await teachingExperienceEntity.save(experienceEntities)
-      }
-      const documentEntities = uploadedFiles.map((uploaded) =>
-        documentRepository.create({
-          candidateId: savedCandidate.id,
-          documentTypeId: uploaded.documentTypeId,
-          fileName: uploaded.fileName,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        }),
+    }
+    if (personByPhone) {
+      throw new ConflictException(
+        'O número de telefone informado já está associado a um candidato cadastrado.',
       )
-      await documentRepository.save(documentEntities)
+    }
+    if (
+      personal.alternativePhone &&
+      personal.alternativePhone === personal.phone
+    ) {
+      throw new ConflictException(
+        'O telefone alternativo não pode ser igual ao telefone principal.',
+      )
+    }
 
-      return savedCandidate
+    const uploadedFiles = await this.uploadAllApplicationFiles(personal, files)
+
+    try {
+      const savedCandidate = await this.datasource.transaction(
+        async (manager) => {
+          const personRepository = manager.getRepository(PersonEntity)
+          const candidateRepository = manager.getRepository(CandidateEntity)
+          const academicEducationEntity = manager.getRepository(
+            AcademicEducationEntity,
+          )
+          const teachingExperienceEntity = manager.getRepository(
+            TeachingExperienceEntity,
+          )
+          const documentRepository = manager.getRepository(
+            TeacherApplicationDocument,
+          )
+          const userRepository = manager.getRepository(User)
+
+          const person = personRepository.create({
+            nationalityId: personal.nationality,
+            email: personal.email,
+            alternativePhone: personal.alternativePhone ?? null,
+            fullName: personal.fullName,
+            address: personal.address,
+            genderId: personal.gender,
+            documentNumber: personal.documentNumber,
+            documentTypeId: personal.documentType,
+            maritalStatusId: personal.maritalStatus,
+            phone: personal.phone,
+            documentExpirationDate: personal.documentExpiration,
+            activeState: 1,
+            birthDate: personal.birthDate,
+            createdAt: new Date(),
+          })
+          const savedPerson = await personRepository.save(person)
+
+          await userRepository.save({
+            name: personal.fullName,
+            email: personal.email,
+            bi: personal.documentNumber,
+            phone: personal.phone,
+            alternativePhone: personal.alternativePhone,
+            address: personal.address,
+            password: hashPassword,
+            province: 'unknown',
+            district: 'unknown',
+            municipality: 'unknown',
+          })
+
+          const candidate = candidateRepository.create({
+            applicationDate: new Date(),
+            person: JSON.stringify({
+              pk_pessoa: savedPerson.id,
+              nome_completo: savedPerson.fullName,
+            }),
+            applicationStatusId: 8,
+            academicDegreeId: academic[0].academicLevel,
+          })
+          const savedCandidate = await candidateRepository.save(candidate)
+
+          const academicEntities = academic.map((item) =>
+            academicEducationEntity.create({
+              graduationYear: Number(item.completionYear),
+              candidateId: savedCandidate.id,
+              academicDegreeId: item.academicLevel,
+              institution: item.institution,
+              courseTrainingAreaId: item.course,
+            }),
+          )
+          if (academicEntities.length) {
+            await academicEducationEntity.save(academicEntities)
+          }
+
+          const experienceEntities = experience.map((item) =>
+            teachingExperienceEntity.create({
+              candidateId: savedCandidate.id,
+              endYear: item.endYear,
+              startYear: item.startYear,
+              institution: item.institution,
+              discipline: item.discipline,
+              course: item.course,
+            }),
+          )
+          if (experienceEntities.length) {
+            await teachingExperienceEntity.save(experienceEntities)
+          }
+          const documentEntities = uploadedFiles.map((uploaded) =>
+            documentRepository.create({
+              candidateId: savedCandidate.id,
+              documentTypeId: uploaded.documentTypeId,
+              fileName: uploaded.fileName,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            }),
+          )
+          await documentRepository.save(documentEntities)
+
+          return savedCandidate
+        },
+      )
+
+      await EmailHelper.sendEmail(this.httpService, {
+        to: personal.email,
+        subject:
+          'Confirmação de Candidatura - Universidade Metodista de Angola',
+        company: 'universidade_metodista_angola',
+        type: 'candidatura_portal_colaborador',
+        context: {
+          nome_candidato: personal.fullName,
+          email_candidato: personal.email,
+          numero_documento: personal.documentNumber,
+          link_portal: process.env.PORTAL_CANDIDATE_URL,
+        },
+      })
+
+      return { message: 'Candidatura criada com sucesso' }
+    } catch (error) {
+      // 3) Banco falhou depois dos uploads: limpa o storage pra não deixar lixo órfão.
+      // await this.cleanupUploadedFiles(uploadedFiles)
+      throw new InternalServerErrorException(
+        'Não foi possível concluir a candidatura. Tente novamente.',
+      )
+    }
+  }
+
+  async myApplications(username: string) {
+    const person = await this.personRepository.findOne({
+      where: { email: username },
     })
 
-    await EmailHelper.sendEmail(this.httpService, {
-    to: personal.email,
-    subject: 'Confirmação de Candidatura - Universidade Metodista de Angola',
-    company: 'universidade_metodista_angola',
-    type: 'candidatura_portal_colaborador',
-    context: {
-      nome_candidato: personal.fullName,
-      email_candidato: personal.email,
-      numero_documento: personal.documentNumber,
-      link_portal: process.env.PORTAL_CANDIDATE_URL,
-    },
-    })  
+    if (!person) {
+      return null
+    }
 
-    return { message: 'Candidatura criada com sucesso' }
-  } catch (error) {
-    // 3) Banco falhou depois dos uploads: limpa o storage pra não deixar lixo órfão.
-    // await this.cleanupUploadedFiles(uploadedFiles)
-    throw new InternalServerErrorException(
-      'Não foi possível concluir a candidatura. Tente novamente.',
-    )
-  }
-}
+    const candidates = await this.candidateRepository
+      .createQueryBuilder('candidate')
+      .where(
+        `JSON_EXISTS(candidate.person, '$?(@.pk_pessoa == $personId)' PASSING :personId AS "personId")`,
+        { personId: person.id },
+      )
+      .orderBy('candidate.applicationDate', 'DESC')
+      .getMany()
 
+    if (!candidates.length) {
+      return null
+    }
 
-async myApplications(username: string) {
-  const person = await this.personRepository.findOne({
-    where: { email: username },
-  })
+    const candidateIds = candidates.map((c) => c.id)
 
-  if (!person) {
-    return null
-  }
+    const statusIds = [
+      ...new Set(
+        candidates
+          .map((c) => c.applicationStatusId)
+          .filter((id): id is number => id != null),
+      ),
+    ]
+    const academicDegreeIds = [
+      ...new Set(
+        candidates
+          .map((c) => c.academicDegreeId)
+          .filter((id): id is number => id != null),
+      ),
+    ]
 
-  const candidates = await this.candidateRepository
-    .createQueryBuilder('candidate')
-    .where(
-      `JSON_EXISTS(candidate.person, '$?(@.pk_pessoa == $personId)' PASSING :personId AS "personId")`,
-      { personId: person.id },
-    )
-    .orderBy('candidate.applicationDate', 'DESC')
-    .getMany()
-
-  if (!candidates.length) {
-    return null
-  }
-
-  const candidateIds = candidates.map((c) => c.id)
-
-  const statusIds = [
-    ...new Set(
-      candidates
-        .map((c) => c.applicationStatusId)
-        .filter((id): id is number => id != null),
-    ),
-  ]
-  const academicDegreeIds = [
-    ...new Set(
-      candidates
-        .map((c) => c.academicDegreeId)
-        .filter((id): id is number => id != null),
-    ),
-  ]
-
-  const [
-    academicEducations,
-    teachingExperiences,
-    documents,
-    applicationStatuses,
-    academicDegrees,
-  ] = await Promise.all([
-    this.academicEducationRepository.find({
-      where: { candidateId: In(candidateIds) },
-    }),
-    this.teachingExperienceRepository.find({
-      where: { candidateId: In(candidateIds) },
-    }),
-    this.teacherApplicationDocumentRepository.find({
-      where: { candidateId: In(candidateIds) },
-    }),
-    statusIds.length
-      ? this.applicationStatusRepository.find({ where: { id: In(statusIds) } })
-      : Promise.resolve([]),
-    academicDegreeIds.length
-      ? this.academicDegreeRepository.find({
+    const [
+      academicEducations,
+      teachingExperiences,
+      documents,
+      applicationStatuses,
+      academicDegrees,
+    ] = await Promise.all([
+      this.academicEducationRepository.find({
+        where: { candidateId: In(candidateIds) },
+      }),
+      this.teachingExperienceRepository.find({
+        where: { candidateId: In(candidateIds) },
+      }),
+      this.teacherApplicationDocumentRepository.find({
+        where: { candidateId: In(candidateIds) },
+      }),
+      statusIds.length
+        ? this.applicationStatusRepository.find({
+          where: { id: In(statusIds) },
+        })
+        : Promise.resolve([]),
+      academicDegreeIds.length
+        ? this.academicDegreeRepository.find({
           where: { id: In(academicDegreeIds) },
         })
-      : Promise.resolve([]),
-  ])
+        : Promise.resolve([]),
+    ])
 
-  const statusMap = new Map(applicationStatuses.map((s) => [s.id, s]))
-  const academicDegreeMap = new Map(academicDegrees.map((d) => [d.id, d]))
+    const statusMap = new Map(applicationStatuses.map((s) => [s.id, s]))
+    const academicDegreeMap = new Map(academicDegrees.map((d) => [d.id, d]))
 
-  const result = candidates.map((candidate) => ({
-    id: candidate.id,
-    applicationDate: candidate.applicationDate,
-    person: {
-      id: person.id,
-      fullName: person.fullName,
-      email: person.email,
-    },
-    applicationStatus: candidate.applicationStatusId
-      ? {
+    const result = candidates.map((candidate) => ({
+      id: candidate.id,
+      applicationDate: candidate.applicationDate,
+      person: {
+        id: person.id,
+        fullName: person.fullName,
+        email: person.email,
+      },
+      applicationStatus: candidate.applicationStatusId
+        ? {
           id: candidate.applicationStatusId,
           description:
             statusMap.get(candidate.applicationStatusId)?.description ?? null,
         }
-      : null,
-    academicDegree: candidate.academicDegreeId
-      ? {
+        : null,
+      academicDegree: candidate.academicDegreeId
+        ? {
           id: candidate.academicDegreeId,
           designation:
             academicDegreeMap.get(candidate.academicDegreeId)?.designation ??
             null,
           acronym:
-            academicDegreeMap.get(candidate.academicDegreeId)?.acronym ?? null,
+            academicDegreeMap.get(candidate.academicDegreeId)?.acronym ??
+            null,
         }
-      : null,
-    academicEducations: academicEducations.filter(
-      (item) => item.candidateId === candidate.id,
-    ),
-    teachingExperiences: teachingExperiences.filter(
-      (item) => item.candidateId === candidate.id,
-    ),
-    documents: documents.filter((item) => item.candidateId === candidate.id),
-  }))
+        : null,
+      academicEducations: academicEducations.filter(
+        (item) => item.candidateId === candidate.id,
+      ),
+      teachingExperiences: teachingExperiences.filter(
+        (item) => item.candidateId === candidate.id,
+      ),
+      documents: documents.filter((item) => item.candidateId === candidate.id),
+    }))
 
-  return result[0]
-}
+    return result[0]
+  }
 
-async updateAcademicEducations(
-  username: string,
-  candidateId: number,
-  items: UpdateAcademicEducationItemDto[],
-) {
-  await this.assertCandidateBelongsToUser(username, candidateId)
+  async updateAcademicEducations(
+    username: string,
+    candidateId: number,
+    items: UpdateAcademicEducationItemDto[],
+  ) {
+    await this.assertCandidateBelongsToUser(username, candidateId)
 
-  await this.datasource.transaction(async (manager) => {
-    const repo = manager.getRepository(AcademicEducationEntity)
+    await this.datasource.transaction(async (manager) => {
+      const repo = manager.getRepository(AcademicEducationEntity)
 
-    const existingIds = items
-      .filter((item): item is UpdateAcademicEducationItemDto & { id: number } =>
-        item.id != null,
-      )
-      .map((item) => item.id)
+      const existingIds = items
+        .filter(
+          (item): item is UpdateAcademicEducationItemDto & { id: number } =>
+            item.id != null,
+        )
+        .map((item) => item.id)
 
-    // remove registos que já não vieram na lista (foram apagados no front)
-    if (existingIds.length) {
-      await repo
-        .createQueryBuilder()
-        .delete()
-        .where('candidateId = :candidateId', { candidateId })
-        .andWhere('id NOT IN (:...ids)', { ids: existingIds })
-        .execute()
-    } else {
-      await repo.delete({ candidateId })
-    }
+      // remove registos que já não vieram na lista (foram apagados no front)
+      if (existingIds.length) {
+        await repo
+          .createQueryBuilder()
+          .delete()
+          .where('candidateId = :candidateId', { candidateId })
+          .andWhere('id NOT IN (:...ids)', { ids: existingIds })
+          .execute()
+      } else {
+        await repo.delete({ candidateId })
+      }
 
-    for (const item of items) {
-      if (item.id) {
-        await repo.update(
-          { id: item.id, candidateId },
-          {
+      for (const item of items) {
+        if (item.id) {
+          await repo.update(
+            { id: item.id, candidateId },
+            {
+              courseTrainingAreaId: Number(item.course),
+              academicDegreeId: Number(item.academicLevel),
+              institution: item.institution,
+              graduationYear: Number(item.completionYear),
+            },
+          )
+        } else {
+          const entity = repo.create({
+            candidateId,
             courseTrainingAreaId: Number(item.course),
             academicDegreeId: Number(item.academicLevel),
             institution: item.institution,
             graduationYear: Number(item.completionYear),
-          },
-        )
-      } else {
-        const entity = repo.create({
-          candidateId,
-          courseTrainingAreaId: Number(item.course),
-          academicDegreeId: Number(item.academicLevel),
-          institution: item.institution,
-          graduationYear: Number(item.completionYear),
-        })
-        await repo.save(entity)
+          })
+          await repo.save(entity)
+        }
       }
-    }
-  })
+    })
 
-  return this.myApplications(username)
-}
+    return this.myApplications(username)
+  }
 
-async updateTeachingExperiences(
-  username: string,
-  candidateId: number,
-  items: UpdateTeachingExperienceItemDto[],
-) {
-  await this.assertCandidateBelongsToUser(username, candidateId)
+  async updateTeachingExperiences(
+    username: string,
+    candidateId: number,
+    items: UpdateTeachingExperienceItemDto[],
+  ) {
+    await this.assertCandidateBelongsToUser(username, candidateId)
 
-  await this.datasource.transaction(async (manager) => {
-    const repo = manager.getRepository(TeachingExperienceEntity)
+    await this.datasource.transaction(async (manager) => {
+      const repo = manager.getRepository(TeachingExperienceEntity)
 
-    const existingIds = items
-      .filter((item): item is UpdateTeachingExperienceItemDto & { id: number } =>
-        item.id != null,
-      )
-      .map((item) => item.id)
+      const existingIds = items
+        .filter(
+          (item): item is UpdateTeachingExperienceItemDto & { id: number } =>
+            item.id != null,
+        )
+        .map((item) => item.id)
 
-    if (existingIds.length) {
-      await repo
-        .createQueryBuilder()
-        .delete()
-        .where('candidateId = :candidateId', { candidateId })
-        .andWhere('id NOT IN (:...ids)', { ids: existingIds })
-        .execute()
-    } else {
-      await repo.delete({ candidateId })
-    }
+      if (existingIds.length) {
+        await repo
+          .createQueryBuilder()
+          .delete()
+          .where('candidateId = :candidateId', { candidateId })
+          .andWhere('id NOT IN (:...ids)', { ids: existingIds })
+          .execute()
+      } else {
+        await repo.delete({ candidateId })
+      }
 
-    for (const item of items) {
-      if (item.id) {
-        await repo.update(
-          { id: item.id, candidateId },
-          {
+      for (const item of items) {
+        if (item.id) {
+          await repo.update(
+            { id: item.id, candidateId },
+            {
+              course: item.course,
+              institution: item.institution,
+              discipline: item.discipline,
+              startYear: item.startYear,
+              endYear: item.endYear,
+            },
+          )
+        } else {
+          const entity = repo.create({
+            candidateId,
             course: item.course,
             institution: item.institution,
             discipline: item.discipline,
             startYear: item.startYear,
             endYear: item.endYear,
-          },
-        )
-      } else {
-        const entity = repo.create({
-          candidateId,
-          course: item.course,
-          institution: item.institution,
-          discipline: item.discipline,
-          startYear: item.startYear,
-          endYear: item.endYear,
-        })
-        await repo.save(entity)
+          })
+          await repo.save(entity)
+        }
       }
-    }
-  })
-
-  return this.myApplications(username)
-}
-
-async uploadDocument(
-  username: string,
-  candidateId: number,
-  documentTypeId: number,
-  file: ApplicationFile,
-) {
-  await this.assertCandidateBelongsToUser(username, candidateId)
-
-  const uploadResult = await this.storageService.upload(file)
-
-  const existing = await this.teacherApplicationDocumentRepository.findOne({
-    where: { candidateId, documentTypeId },
-  })
-
-  if (existing) {
-    await this.teacherApplicationDocumentRepository.update(
-      { id: existing.id },
-      {
-        fileName: uploadResult.file.filename,
-        updatedAt: new Date(),
-      },
-    )
-  } else {
-    const document = this.teacherApplicationDocumentRepository.create({
-      candidateId,
-      documentTypeId,
-      fileName: uploadResult.file.filename,
-      createdAt: new Date(),
-      updatedAt: new Date(),
     })
-    await this.teacherApplicationDocumentRepository.save(document)
+
+    return this.myApplications(username)
   }
 
-  return this.myApplications(username)
-}
+  async uploadDocument(
+    username: string,
+    candidateId: number,
+    documentTypeId: number,
+    file: ApplicationFile,
+  ) {
+    await this.assertCandidateBelongsToUser(username, candidateId)
 
-private async uploadAndSaveDocument(
+    const uploadResult = await this.storageService.upload(file)
+
+    const existing = await this.teacherApplicationDocumentRepository.findOne({
+      where: { candidateId, documentTypeId },
+    })
+
+    if (existing) {
+      await this.teacherApplicationDocumentRepository.update(
+        { id: existing.id },
+        {
+          fileName: uploadResult.file.filename,
+          updatedAt: new Date(),
+        },
+      )
+    } else {
+      const document = this.teacherApplicationDocumentRepository.create({
+        candidateId,
+        documentTypeId,
+        fileName: uploadResult.file.filename,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      await this.teacherApplicationDocumentRepository.save(document)
+    }
+
+    return this.myApplications(username)
+  }
+
+  private async uploadAndSaveDocument(
     candidateId: number,
     documentTypeId: TipoDocumentoNecessario,
     file: ApplicationFile,
@@ -560,108 +581,122 @@ private async uploadAndSaveDocument(
   }
 
   private async assertCandidateBelongsToUser(
-  username: string,
-  candidateId: number,
-) {
-  const person = await this.personRepository.findOne({
-    where: { email: username },
-  })
+    username: string,
+    candidateId: number,
+  ) {
+    const person = await this.personRepository.findOne({
+      where: { email: username },
+    })
 
-  if (!person) {
-    throw new ForbiddenException('Utilizador não encontrado.')
-  }
+    if (!person) {
+      throw new ForbiddenException('Utilizador não encontrado.')
+    }
 
-  const candidate = await this.candidateRepository
-    .createQueryBuilder('candidate')
-    .where('candidate.id = :candidateId', { candidateId })
-    .andWhere(
-      `JSON_EXISTS(candidate.person, '$?(@.pk_pessoa == $personId)' PASSING :personId AS "personId")`,
-      { personId: person.id },
-    )
-    .getOne()
+    const candidate = await this.candidateRepository
+      .createQueryBuilder('candidate')
+      .where('candidate.id = :candidateId', { candidateId })
+      .andWhere(
+        `JSON_EXISTS(candidate.person, '$?(@.pk_pessoa == $personId)' PASSING :personId AS "personId")`,
+        { personId: person.id },
+      )
+      .getOne()
 
-  if (!candidate) {
-    throw new ForbiddenException(
-      'Esta candidatura não pertence ao utilizador autenticado.',
-    )
-  }
-
-  return candidate
-}
-// private async cleanupUploadedFiles(
-//   uploaded: Array<{ documentTypeId: number; fileName: string }>,
-// ) {
-//  TOD: IMPLEMNTAR ROTA DE APAGAR ARQUIVOS NO UPLOAD SERVICES
-//   await Promise.allSettled(
-//     uploaded.map((item) =>
-//       this.storageService.delete?.(item.fileName).catch(() => {
-//         // best-effort: se a limpeza falhar, só regista, não bloqueia a resposta ao usuário
-//         console.error(`Falha ao limpar ficheiro órfão: ${item.fileName}`)
-//       }),
-//     ),
-//   )
-// }
-private async uploadAllApplicationFiles(
-  personal: CreateApplicationPayload['personal'],
-  files: CreateApplicationPayload['files'],
-): Promise<Array<{ documentTypeId: number; fileName: string }>> {
-  const uploadTasks: Array<{ documentTypeId: number; file: ApplicationFile }> = [
-    { documentTypeId: personal.documentType, file: files.identificationDocument },
-    { documentTypeId: TipoDocumentoNecessario.CURRICULUM_VITAE, file: files.cv },
-    { documentTypeId: TipoDocumentoNecessario.CERTIFICADO, file: files.courseCertificate },
-    {
-      documentTypeId: TipoDocumentoNecessario.DECLARACAO_FORMACAO_PEDAGOGICA,
-      file: files.pedagogicalAggregation,
-    },
-    ...files.certificates.map((certificate) => ({
-      documentTypeId: TipoDocumentoNecessario.CERTIFICADO,
-      file: certificate,
-    })),
-  ]
-
-  const uploaded: Array<{ documentTypeId: number; fileName: string }> = []
-
-  try {
-    // Promise.all: se um falhar, os outros ainda em curso não são "desfeitos"
-    // automaticamente, mas o catch abaixo lida com isso via allSettled.
-    const results = await Promise.allSettled(
-      uploadTasks.map(async (task) => {
-        const result = await this.storageService.upload(task.file)
-        return { documentTypeId: task.documentTypeId, fileName: result.file.filename }
-      }),
-    )
-
-    const failed = results.filter(
-      (r): r is PromiseRejectedResult => r.status === 'rejected',
-    )
-    const succeeded = results.filter(
-      (r): r is PromiseFulfilledResult<{ documentTypeId: number; fileName: string }> =>
-        r.status === 'fulfilled',
-    )
-
-    succeeded.forEach((r) => uploaded.push(r.value))
-
-    if (failed.length) {
-      // alguns uploads deram certo, outros não — limpa os que subiram
-      // antes de propagar o erro, pra não deixar arquivos órfãos no storage.
-      // await this.cleanupUploadedFiles(uploaded)
-      throw new InternalServerErrorException(
-        'Falha ao enviar um ou mais documentos. Tente novamente.',
+    if (!candidate) {
+      throw new ForbiddenException(
+        'Esta candidatura não pertence ao utilizador autenticado.',
       )
     }
 
-    return uploaded
-  } catch (error) {
-    if (error instanceof InternalServerErrorException) throw error
-    // await this.cleanupUploadedFiles(uploaded)
-    throw new InternalServerErrorException(
-      'Falha ao enviar os documentos da candidatura.',
-    )
+    return candidate
+  }
+  // private async cleanupUploadedFiles(
+  //   uploaded: Array<{ documentTypeId: number; fileName: string }>,
+  // ) {
+  //  TOD: IMPLEMNTAR ROTA DE APAGAR ARQUIVOS NO UPLOAD SERVICES
+  //   await Promise.allSettled(
+  //     uploaded.map((item) =>
+  //       this.storageService.delete?.(item.fileName).catch(() => {
+  //         // best-effort: se a limpeza falhar, só regista, não bloqueia a resposta ao usuário
+  //         console.error(`Falha ao limpar ficheiro órfão: ${item.fileName}`)
+  //       }),
+  //     ),
+  //   )
+  // }
+  private async uploadAllApplicationFiles(
+    personal: CreateApplicationPayload['personal'],
+    files: CreateApplicationPayload['files'],
+  ): Promise<Array<{ documentTypeId: number; fileName: string }>> {
+    const uploadTasks: Array<{
+      documentTypeId: number
+      file: ApplicationFile
+    }> = [
+        {
+          documentTypeId: personal.documentType,
+          file: files.identificationDocument,
+        },
+        {
+          documentTypeId: TipoDocumentoNecessario.CURRICULUM_VITAE,
+          file: files.cv,
+        },
+        {
+          documentTypeId: TipoDocumentoNecessario.CERTIFICADO,
+          file: files.courseCertificate,
+        },
+        {
+          documentTypeId: TipoDocumentoNecessario.DECLARACAO_FORMACAO_PEDAGOGICA,
+          file: files.pedagogicalAggregation,
+        },
+        ...files.certificates.map((certificate) => ({
+          documentTypeId: TipoDocumentoNecessario.CERTIFICADO,
+          file: certificate,
+        })),
+      ]
+
+    const uploaded: Array<{ documentTypeId: number; fileName: string }> = []
+
+    try {
+      // Promise.all: se um falhar, os outros ainda em curso não são "desfeitos"
+      // automaticamente, mas o catch abaixo lida com isso via allSettled.
+      const results = await Promise.allSettled(
+        uploadTasks.map(async (task) => {
+          const result = await this.storageService.upload(task.file)
+          return {
+            documentTypeId: task.documentTypeId,
+            fileName: result.file.filename,
+          }
+        }),
+      )
+
+      const failed = results.filter(
+        (r): r is PromiseRejectedResult => r.status === 'rejected',
+      )
+      const succeeded = results.filter(
+        (
+          r,
+        ): r is PromiseFulfilledResult<{
+          documentTypeId: number
+          fileName: string
+        }> => r.status === 'fulfilled',
+      )
+
+      succeeded.forEach((r) => uploaded.push(r.value))
+
+      if (failed.length) {
+        // alguns uploads deram certo, outros não — limpa os que subiram
+        // antes de propagar o erro, pra não deixar arquivos órfãos no storage.
+        // await this.cleanupUploadedFiles(uploaded)
+        throw new InternalServerErrorException(
+          'Falha ao enviar um ou mais documentos. Tente novamente.',
+        )
+      }
+
+      return uploaded
+    } catch (error) {
+      if (error instanceof InternalServerErrorException) throw error
+      // await this.cleanupUploadedFiles(uploaded)
+      throw new InternalServerErrorException(
+        'Falha ao enviar os documentos da candidatura.',
+      )
+    }
   }
 }
-}
-
-
-
-
-

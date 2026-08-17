@@ -9,15 +9,15 @@ import {
   ParseIntPipe,
   UseGuards,
   Req,
-} from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { LeavesService } from './leaves.service';
-import { CreateLeaveDto } from './dto/create-leave.dto';
-import { UpdateLeaveDto } from './dto/update-leave.dto';
-import { LeaveQueryDto } from './dto/leave-query.dto';
-import { RemoteJwtAuthGuard } from '../../commons/guards/remote-jwt-auth.guard';
-import { PermissionsGuard } from '../../commons/guards/permissions.guard';
-import { Permissions } from '../../commons/decorators/permissions.decorator';
+} from '@nestjs/common'
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger'
+import { LeavesService } from './leaves.service'
+import { CreateLeaveDto } from './dto/create-leave.dto'
+import { UpdateLeaveDto } from './dto/update-leave.dto'
+import { LeaveQueryDto } from './dto/leave-query.dto'
+import { RemoteJwtAuthGuard } from '../../commons/guards/remote-jwt-auth.guard'
+import { PermissionsGuard } from '../../commons/guards/permissions.guard'
+import { Permissions } from '../../commons/decorators/permissions.decorator'
 
 @ApiTags('Licenças')
 @ApiBearerAuth()
@@ -30,14 +30,14 @@ export class LeavesController {
   @Permissions('write:leaves')
   @ApiOperation({ summary: 'Registrar uma nova licença' })
   create(@Body() createLeaveDto: CreateLeaveDto) {
-    return this.leavesService.create(createLeaveDto);
+    return this.leavesService.create(createLeaveDto)
   }
 
   @Get()
   @Permissions('read:leaves')
   @ApiOperation({ summary: 'Listar licenças com filtros' })
   findAll(@Query() query: LeaveQueryDto) {
-    return this.leavesService.findAll(query);
+    return this.leavesService.findAll(query)
   }
 
   @Patch(':id')
@@ -48,7 +48,7 @@ export class LeavesController {
     @Body() updateLeaveDto: UpdateLeaveDto,
     @Req() req: any,
   ) {
-    const approverId = req.user.sub;
-    return this.leavesService.update(id, updateLeaveDto, approverId);
+    const approverId = req.user.sub
+    return this.leavesService.update(id, updateLeaveDto, approverId)
   }
 }

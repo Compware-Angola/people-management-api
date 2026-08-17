@@ -5,29 +5,29 @@ import {
   ManyToOne,
   JoinColumn,
   PrimaryColumn,
-} from 'typeorm';
-import { User } from '../../user/entities/user.entity';
-import { Group } from './group.entity';
+} from 'typeorm'
+import { User } from '../../user/entities/user.entity'
+import { Group } from './group.entity'
 
 @Entity('GP_GRUPOS_USUARIOS')
 export class UserGroup {
   @PrimaryColumn({ name: 'CODIGO_GRUPO' })
-  groupId: number;
+  groupId: number
 
   @PrimaryColumn({ name: 'CODIGO_USUARIO' })
-  userId: number;
+  userId: number
 
   @Column({ name: 'ESTADO', type: 'number', default: 1 })
-  status: number;
+  status: number
 
   @CreateDateColumn({ name: 'CRIADO_EM', type: 'date' })
-  createdAt: Date;
+  createdAt: Date
 
   @ManyToOne(() => Group, (group) => group.userGroups)
   @JoinColumn({ name: 'CODIGO_GRUPO' })
-  group: Group;
+  group: Group
 
   @ManyToOne(() => User, (user) => user.userGroups)
   @JoinColumn({ name: 'CODIGO_USUARIO' })
-  user: User;
+  user: User
 }

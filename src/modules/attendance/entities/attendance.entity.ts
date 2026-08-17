@@ -3,22 +3,22 @@ import {
   Column,
   PrimaryGeneratedColumn,
   CreateDateColumn,
-} from 'typeorm';
-import { AttendanceSituation } from '../dto/create-attendance.dto';
+} from 'typeorm'
+import { AttendanceSituation } from '../dto/create-attendance.dto'
 
 @Entity('GP_ASSIDUIDADES')
 export class Attendance {
   @PrimaryGeneratedColumn({ name: 'CODIGO' })
-  id: number;
+  id: number
 
   @Column({ name: 'CODIGO_COLABORADOR' })
-  employeeId: number;
+  employeeId: number
 
   @Column({ name: 'DATA_INICIO', type: 'date' })
-  startDate: Date;
+  startDate: Date
 
   @Column({ name: 'DATA_FIM', type: 'date', nullable: true })
-  endDate?: Date;
+  endDate?: Date
 
   @Column({
     name: 'HORAS',
@@ -27,15 +27,15 @@ export class Attendance {
     scale: 2,
     nullable: true,
   })
-  hours?: number;
+  hours?: number
 
   @Column({
     name: 'SITUACAO',
     type: 'varchar2',
     length: 20,
   })
-  situation: AttendanceSituation;
+  situation: AttendanceSituation
 
   @CreateDateColumn({ name: 'CRIADO_EM', type: 'date' })
-  createdAt: Date;
+  createdAt: Date
 }

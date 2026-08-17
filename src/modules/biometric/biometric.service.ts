@@ -136,7 +136,7 @@ export class BiometricService {
     const data = await this.dataSource.query(
       `SELECT I.CODIGO AS "id",
               I.CODIGO_COLABORADOR AS "employeeId",
-              C.NOME AS "employeeName",
+              U.NOME AS "employeeName",
               I.CODIGO_EQUIPAMENTO AS "equipmentId",
               E.NOME AS "equipmentName",
               I.EVENTO AS "event",
@@ -144,6 +144,7 @@ export class BiometricService {
               I.CRIADO_EM AS "createdAt"
          FROM GP_INTEGRACOES_BIOMETRICAS I
          JOIN GP_COLABORADORES C ON I.CODIGO_COLABORADOR = C.CODIGO
+         JOIN GP_USUARIOS U ON C.CODIGO_USUARIO = U.CODIGO
          JOIN GP_EQUIPAMENTOS E ON I.CODIGO_EQUIPAMENTO = E.CODIGO
         ORDER BY I.CODIGO DESC
        OFFSET :1 ROWS FETCH NEXT :2 ROWS ONLY`,

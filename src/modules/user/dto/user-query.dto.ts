@@ -1,20 +1,20 @@
-import { IsOptional, IsString } from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { PaginationQueryDto } from '../../../commons/dto/pagination.dto';
+import { IsOptional, IsString } from 'class-validator'
+import { ApiPropertyOptional } from '@nestjs/swagger'
+import { PaginationQueryDto } from '../../../commons/dto/pagination.dto'
 
 export class UserQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional()
   @IsString()
   @IsOptional()
-  bi?: string;
+  bi?: string
 
   @ApiPropertyOptional()
   @IsString()
   @IsOptional()
-  email?: string;
+  email?: string
 
   @ApiPropertyOptional()
   @IsString()
   @IsOptional()
-  name?: string;
+  name?: string
 }
