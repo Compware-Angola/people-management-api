@@ -35,10 +35,7 @@ import { CreateRequisitionDto } from '../dto/create-requisition.dto'
 import { UpdateRequisitionDto } from '../dto/update-requisition.dto'
 import { ListRequisitionsQueryDto } from '../dto/list-requisitions-query.dto'
 import { CancelRequisitionDto } from '../dto/cancel-requisition.dto'
-import {
-  AnalyzeRequisitionRhDto,
-  RhDecision,
-} from '../dto/analyze-requisition-rh.dto'
+import { AnalyzeRequisitionRhDto } from '../dto/analyze-requisition-rh.dto'
 import {
   AnalyzeRequisitionFinancialDto,
   BudgetAvailability,
@@ -48,6 +45,7 @@ import {
   MAX_CODE_GENERATION_ATTEMPTS,
   REQUISITION_HISTORY_ACTION,
   REQUISITION_RELATIONS,
+  RhDecision,
 } from '../constants'
 
 interface FinancialDecisionResult {
