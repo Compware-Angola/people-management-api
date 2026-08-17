@@ -342,9 +342,14 @@ export class VacanciesService {
       )
     }
 
-    const publicationDate = vacancy.publicationDate ?? new Date()
+    const publicationDate = vacancy.publicationDate
+      ? new Date(vacancy.publicationDate)
+      : new Date()
+    const closingDate = vacancy.closingDate
+      ? new Date(vacancy.closingDate)
+      : null
 
-    if (vacancy.closingDate && vacancy.closingDate <= publicationDate) {
+    if (closingDate && closingDate <= publicationDate) {
       throw new BadRequestException(
         'A data de encerramento deve ser posterior à data de publicação',
       )
