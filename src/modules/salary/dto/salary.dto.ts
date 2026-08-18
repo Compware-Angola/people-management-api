@@ -6,6 +6,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  Min,
 } from 'class-validator'
 import { Type } from 'class-transformer'
 
@@ -46,6 +47,11 @@ export class CreateSalaryDto {
   @IsOptional()
   @IsString()
   description?: string
+
+  @ApiPropertyOptional({ description: 'Salário base', example: 150000 })
+  @IsNumber()
+  @Min(0)
+  baseSalary: number
 }
 
 export class UpdateSalaryDto {
@@ -68,6 +74,12 @@ export class UpdateSalaryDto {
   @IsOptional()
   @IsString()
   description?: string
+
+  @ApiPropertyOptional({ description: 'Salário base', example: 150000 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  baseSalary?: number
 
   @ApiPropertyOptional({
     description: 'Estado da estrutura salarial (0 = Inativo, 1 = Ativo)',

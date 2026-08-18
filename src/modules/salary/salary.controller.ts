@@ -7,12 +7,13 @@ import {
   Param,
   Query,
   ParseIntPipe,
-  UseGuards, Req,
-} from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { RemoteJwtAuthGuard } from '../../commons/guards/remote-jwt-auth.guard';
-import { PermissionsGuard } from '../../commons/guards/permissions.guard';
-import { Permissions } from '../../commons/decorators/permissions.decorator';
+  UseGuards,
+  Req,
+} from '@nestjs/common'
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger'
+import { RemoteJwtAuthGuard } from '../../commons/guards/remote-jwt-auth.guard'
+import { PermissionsGuard } from '../../commons/guards/permissions.guard'
+import { Permissions } from '../../commons/decorators/permissions.decorator'
 import { SalaryService } from './salary.service'
 import {
   CreateSalaryDto,
@@ -70,9 +71,18 @@ export class SalaryController {
 
   @Get('employees/:id')
   @Permissions('read:salaries')
-  @ApiOperation({ summary: 'Listar salário do colaborador' })
+  @ApiOperation({ summary: 'Buscar a estrutura salarial ativa do colaborador' })
   findSalaryEmployee(@Param('id', ParseIntPipe) id: number) {
     return this.service.findSalaryEmployeeByEmployeeId(id)
+  }
+
+  @Get('employees/:id/history')
+  @Permissions('read:salaries')
+  @ApiOperation({
+    summary: 'Listar o histórico de estruturas salariais do colaborador',
+  })
+  findSalaryEmployeeHistory(@Param('id', ParseIntPipe) id: number) {
+    return this.service.findSalaryEmployeeHistory(id)
   }
 
   @Get('rubrics/:id')

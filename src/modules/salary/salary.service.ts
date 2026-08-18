@@ -12,7 +12,10 @@ import {
   SalaryQueryDto,
   UpdateSalaryDto,
 } from './dto/salary.dto'
-import { SalaryEmployee } from './entities/salary-employee.entity'
+import {
+  SalaryEmployee,
+  SalaryEmployeeStatus,
+} from './entities/salary-employee.entity'
 import { CreateSalaryEmployeeDto } from './dto/salary-employee.dto'
 import { Rubric } from './entities/rubric.entity'
 import { CreateRubricDto } from './dto/rubric.dto'
@@ -94,10 +97,66 @@ export class SalaryService {
     createSalaryEmployeeDto: CreateSalaryEmployeeDto,
     createdByEmployeeId: number,
   ): Promise<SalaryEmployee> {
+    const { salaryId, employeeId } = createSalaryEmployeeDto
+
+    const salaryStructure = await this.salaryRepository.findOne({
+      where: { id: salaryId },
+    })
+
+    if (!salaryStructure) {
+      throw new NotFoundException(
+        `Estrutura salarial com ID ${salaryId} não encontrada`,
+      )
+    }
+
+    if (salaryStructure.status !== 1) {
+      throw new BadRequestException('A estrutura salarial não está ativa')
+    }
+
+    const activeAssignment = await this.salaryEmployeeRepository.findOne({
+      where: { employeeId, status: SalaryEmployeeStatus.ACTIVE },
+    })
+
+    if (activeAssignment && activeAssignment.salaryId === salaryId) {
+      throw new BadRequestException(
+        'O colaborador já possui essa estrutura salarial ativa',
+      )
+    }
+
+    if (activeAssignment) {
+      await this.salaryEmployeeRepository.update(
+        { salaryId: activeAssignment.salaryId, employeeId },
+        { status: SalaryEmployeeStatus.INACTIVE, endDate: new Date() },
+      )
+    }
+
+    const existingAssignment = await this.salaryEmployeeRepository.findOneBy({
+      salaryId,
+      employeeId,
+    })
+
+    if (existingAssignment) {
+      await this.salaryEmployeeRepository.update(
+        { salaryId, employeeId },
+        {
+          createdByEmployeeId,
+          status: SalaryEmployeeStatus.ACTIVE,
+          startDate: new Date(),
+          endDate: null,
+        },
+      )
+      return (await this.salaryEmployeeRepository.findOneBy({
+        salaryId,
+        employeeId,
+      }))!
+    }
+
     const salaryEmployee = this.salaryEmployeeRepository.create({
-      salaryId: createSalaryEmployeeDto.salaryId,
-      employeeId: createSalaryEmployeeDto.employeeId,
-      createdByEmployeeId: createdByEmployeeId,
+      salaryId,
+      employeeId,
+      createdByEmployeeId,
+      status: SalaryEmployeeStatus.ACTIVE,
+      startDate: new Date(),
     })
     return this.salaryEmployeeRepository.save(salaryEmployee)
   }
@@ -105,17 +164,28 @@ export class SalaryService {
   async findSalaryEmployeeByEmployeeId(
     employeeId: number,
   ): Promise<SalaryEmployee> {
-    const salaryEmployee = await this.salaryEmployeeRepository.findOneBy({
-      employeeId,
+    const salaryEmployee = await this.salaryEmployeeRepository.findOne({
+      where: { employeeId, status: SalaryEmployeeStatus.ACTIVE },
+      relations: { salaryStructure: true },
     })
 
     if (!salaryEmployee) {
       throw new NotFoundException(
-        `Salário do colaborador ${employeeId} não encontrado`,
+        `Estrutura salarial ativa do colaborador ${employeeId} não encontrada`,
       )
     }
 
     return salaryEmployee
+  }
+
+  async findSalaryEmployeeHistory(
+    employeeId: number,
+  ): Promise<SalaryEmployee[]> {
+    return this.salaryEmployeeRepository.find({
+      where: { employeeId },
+      relations: { salaryStructure: true },
+      order: { startDate: 'DESC' },
+    })
   }
 
   async createRubric(createRubricDto: CreateRubricDto): Promise<Rubric> {

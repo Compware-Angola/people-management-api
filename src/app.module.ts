@@ -19,6 +19,7 @@ import { RequisitionsModule } from './modules/requisitions/requisitions.module'
 import { VacancyStatesModule } from './modules/vacancy-states/vacancy-states.module'
 import { VacanciesModule } from './modules/vacancies/vacancies.module'
 import { SalaryModule } from './modules/salary/salary.module'
+import { ContractModule } from './modules/contract/contract.module'
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { SalaryModule } from './modules/salary/salary.module'
     ApplicationsModule,
     LeavesModule,
     SalaryModule,
+    ContractModule,
   ],
 })
 export class AppModule {}

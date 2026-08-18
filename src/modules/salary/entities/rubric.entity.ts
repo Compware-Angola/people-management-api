@@ -8,6 +8,7 @@ export enum RubricType {
 export enum ValueType {
   PERCENTAGE = 'PERCENTUAL',
   FIXED = 'FIXO',
+  HOURLY = 'HORA_EXTRA',
 }
 
 @Entity('GP_RUBRICAS')

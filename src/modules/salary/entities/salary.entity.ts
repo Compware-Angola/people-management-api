@@ -14,6 +14,9 @@ export class Salary {
   @Column({ name: 'DESCRICAO', type: 'varchar2', length: 255, nullable: true })
   description: string
 
+  @Column({ name: 'SALARIO_BASE', type: 'number', precision: 10, scale: 2 })
+  baseSalary: number
+
   @Column({ name: 'ESTADO', type: 'number', default: 1 })
   status: number
 
