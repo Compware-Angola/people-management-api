@@ -1,30 +1,50 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsNumber, IsOptional, IsEnum } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
+import {
+  IsString,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsEnum,
+} from 'class-validator'
 
 export class CreatePermissionDto {
-  @ApiProperty({ description: 'Nome único da permissão', example: 'USUARIO:CRIAR' })
+  @ApiProperty({
+    description: 'Nome único da permissão',
+    example: 'USUARIO:CRIAR',
+  })
   @IsString()
   @IsNotEmpty()
-  description: string;
+  description: string
 
-  @ApiPropertyOptional({ description: 'Estado da permissão (0 = Inativo, 1 = Ativo)', default: 1, enum: [0, 1] })
+  @ApiPropertyOptional({
+    description: 'Estado da permissão (0 = Inativo, 1 = Ativo)',
+    default: 1,
+    enum: [0, 1],
+  })
   @IsNumber()
   @IsOptional()
   @IsEnum([0, 1])
-  status?: number;
+  status?: number
 }
 
 export class UpdatePermissionDto {
-  @ApiPropertyOptional({ description: 'Nome único da permissão', example: 'USUARIO:CRIAR' })
+  @ApiPropertyOptional({
+    description: 'Nome único da permissão',
+    example: 'USUARIO:CRIAR',
+  })
   @IsString()
   @IsOptional()
-  description?: string;
+  description?: string
 
-  @ApiPropertyOptional({ description: 'Estado da permissão (0 = Inativo, 1 = Ativo)', default: 1, enum: [0, 1] })
+  @ApiPropertyOptional({
+    description: 'Estado da permissão (0 = Inativo, 1 = Ativo)',
+    default: 1,
+    enum: [0, 1],
+  })
   @IsNumber()
   @IsOptional()
   @IsEnum([0, 1])
-  status?: number;
+  status?: number
 }
 
 export class UpdateRelationStatusDto {
@@ -32,5 +52,5 @@ export class UpdateRelationStatusDto {
   @IsNumber()
   @IsNotEmpty()
   @IsEnum([0, 1])
-  status: number;
+  status: number
 }

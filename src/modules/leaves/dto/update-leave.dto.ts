@@ -1,5 +1,5 @@
-import { IsEnum, IsInt, IsOptional, IsString } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsEnum, IsInt, IsOptional, IsString } from 'class-validator'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 
 export enum LeaveStatus {
   PENDING = 'PENDENTE',
@@ -11,15 +11,18 @@ export enum LeaveStatus {
 export class UpdateLeaveDto {
   @ApiProperty({ enum: LeaveStatus })
   @IsEnum(LeaveStatus)
-  status: LeaveStatus;
+  status: LeaveStatus
 
-  @ApiPropertyOptional({ example: 2, description: 'ID do colaborador aprovador' })
+  @ApiPropertyOptional({
+    example: 2,
+    description: 'ID do colaborador aprovador',
+  })
   @IsInt()
   @IsOptional()
-  approverId?: number;
+  approverId?: number
 
   @ApiPropertyOptional({ example: 'Estado atualizado conforme documentação' })
   @IsString()
   @IsOptional()
-  observation?: string;
+  observation?: string
 }

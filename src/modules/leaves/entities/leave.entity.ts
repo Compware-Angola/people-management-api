@@ -6,36 +6,36 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
-} from 'typeorm';
-import { LeaveType } from '../dto/create-leave.dto';
-import { LeaveStatus } from '../dto/update-leave.dto';
-import { Employee } from '../../employee/entities/employee.entity';
+} from 'typeorm'
+import { LeaveType } from '../dto/create-leave.dto'
+import { LeaveStatus } from '../dto/update-leave.dto'
+import { Employee } from '../../employee/entities/employee.entity'
 
 @Entity('GP_LICENCAS')
 export class Leave {
   @PrimaryGeneratedColumn({ name: 'CODIGO' })
-  id: number;
+  id: number
 
   @Column({ name: 'CODIGO_COLABORADOR' })
-  employeeId: number;
+  employeeId: number
 
   @ManyToOne(() => Employee)
   @JoinColumn({ name: 'CODIGO_COLABORADOR' })
-  employee: Employee;
+  employee: Employee
 
   @Column({ name: 'CODIGO_COLABORADOR_APROVADOR', nullable: true })
-  approverId?: number;
+  approverId?: number
 
   @ManyToOne(() => Employee)
   @JoinColumn({ name: 'CODIGO_COLABORADOR_APROVADOR' })
-  approver?: Employee;
+  approver?: Employee
 
   @Column({
     name: 'TIPO',
     type: 'varchar2',
     length: 20,
   })
-  type: LeaveType;
+  type: LeaveType
 
   @Column({
     name: 'ESTADO',
@@ -43,23 +43,23 @@ export class Leave {
     length: 20,
     default: LeaveStatus.PENDING,
   })
-  status: LeaveStatus;
+  status: LeaveStatus
 
   @Column({ name: 'DATA_INICIO', type: 'date' })
-  startDate: Date;
+  startDate: Date
 
   @Column({ name: 'DATA_FIM', type: 'date' })
-  endDate: Date;
+  endDate: Date
 
   @Column({ name: 'CODIGO_DOCUMENTO', nullable: true })
-  documentId?: number;
+  documentId?: number
 
   @Column({ name: 'OBSERVACAO', nullable: true, length: 500 })
-  observation?: string;
+  observation?: string
 
   @CreateDateColumn({ name: 'CRIADO_EM', type: 'date' })
-  createdAt: Date;
+  createdAt: Date
 
   @UpdateDateColumn({ name: 'ATUALIZADO_EM', type: 'date', nullable: true })
-  updatedAt?: Date;
+  updatedAt?: Date
 }

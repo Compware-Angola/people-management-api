@@ -86,21 +86,24 @@ export class VacationService {
     const data = await this.dataSource.query(
       `SELECT V.CODIGO AS "id",
               V.CODIGO_COLABORADOR AS "employeeId",
-              C.NOME AS "employeeName",
+              UC.NOME AS "employeeName",
               V.DATA_INICIO AS "startDate",
               V.DATA_FIM AS "endDate",
               V.DIAS AS "days",
               V.OBSERVACAO AS "observation",
               V.CODIGO_GESTOR_APROVADOR AS "approverManagerId",
-              GM.NOME AS "approverManagerName",
+              UGM.NOME AS "approverManagerName",
               V.CODIGO_RH_APROVADOR AS "approverRhId",
-              RH.NOME AS "approverRhName",
+              URH.NOME AS "approverRhName",
               V.ESTADO AS "status",
               V.CRIADO_EM AS "createdAt"
          FROM GP_FERIAS V
          JOIN GP_COLABORADORES C ON V.CODIGO_COLABORADOR = C.CODIGO
+         JOIN GP_USUARIOS UC ON C.CODIGO_USUARIO = UC.CODIGO
          LEFT JOIN GP_COLABORADORES GM ON V.CODIGO_GESTOR_APROVADOR = GM.CODIGO
+         LEFT JOIN GP_USUARIOS UGM ON GM.CODIGO_USUARIO = UGM.CODIGO
          LEFT JOIN GP_COLABORADORES RH ON V.CODIGO_RH_APROVADOR = RH.CODIGO
+         LEFT JOIN GP_USUARIOS URH ON RH.CODIGO_USUARIO = URH.CODIGO
         ${whereClause}
         ORDER BY V.CODIGO DESC
        OFFSET :${placeholderOffset} ROWS FETCH NEXT :${placeholderLimit} ROWS ONLY`,
@@ -129,21 +132,24 @@ export class VacationService {
     const result = await this.dataSource.query(
       `SELECT V.CODIGO AS "id",
               V.CODIGO_COLABORADOR AS "employeeId",
-              C.NOME AS "employeeName",
+              UC.NOME AS "employeeName",
               V.DATA_INICIO AS "startDate",
               V.DATA_FIM AS "endDate",
               V.DIAS AS "days",
               V.OBSERVACAO AS "observation",
               V.CODIGO_GESTOR_APROVADOR AS "approverManagerId",
-              GM.NOME AS "approverManagerName",
+              UGM.NOME AS "approverManagerName",
               V.CODIGO_RH_APROVADOR AS "approverRhId",
-              RH.NOME AS "approverRhName",
+              URH.NOME AS "approverRhName",
               V.ESTADO AS "status",
               V.CRIADO_EM AS "createdAt"
          FROM GP_FERIAS V
          JOIN GP_COLABORADORES C ON V.CODIGO_COLABORADOR = C.CODIGO
+         JOIN GP_USUARIOS UC ON C.CODIGO_USUARIO = UC.CODIGO
          LEFT JOIN GP_COLABORADORES GM ON V.CODIGO_GESTOR_APROVADOR = GM.CODIGO
+         LEFT JOIN GP_USUARIOS UGM ON GM.CODIGO_USUARIO = UGM.CODIGO
          LEFT JOIN GP_COLABORADORES RH ON V.CODIGO_RH_APROVADOR = RH.CODIGO
+         LEFT JOIN GP_USUARIOS URH ON RH.CODIGO_USUARIO = URH.CODIGO
         WHERE V.CODIGO = :1`,
       [id],
     )

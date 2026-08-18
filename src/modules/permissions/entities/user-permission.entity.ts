@@ -5,29 +5,29 @@ import {
   ManyToOne,
   JoinColumn,
   PrimaryColumn,
-} from 'typeorm';
-import { User } from '../../user/entities/user.entity';
-import { Permission } from './permission.entity';
+} from 'typeorm'
+import { User } from '../../user/entities/user.entity'
+import { Permission } from './permission.entity'
 
 @Entity('GP_USUARIOS_PERMISSOES')
 export class UserPermission {
   @PrimaryColumn({ name: 'CODIGO_USUARIO' })
-  userId: number;
+  userId: number
 
   @PrimaryColumn({ name: 'CODIGO_PERMISSAO' })
-  permissionId: number;
+  permissionId: number
 
   @Column({ name: 'ESTADO', type: 'number', default: 1 })
-  status: number;
+  status: number
 
   @CreateDateColumn({ name: 'CRIADO_EM', type: 'date' })
-  createdAt: Date;
+  createdAt: Date
 
   @ManyToOne(() => User, (user) => user.userPermissions)
   @JoinColumn({ name: 'CODIGO_USUARIO' })
-  user: User;
+  user: User
 
   @ManyToOne(() => Permission, (permission) => permission.userPermissions)
   @JoinColumn({ name: 'CODIGO_PERMISSAO' })
-  permission: Permission;
+  permission: Permission
 }
