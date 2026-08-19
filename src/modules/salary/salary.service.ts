@@ -21,6 +21,7 @@ import { Rubric } from './entities/rubric.entity'
 import { CreateRubricDto } from './dto/rubric.dto'
 import { SalaryRubric } from './entities/salary-rubric.entity'
 import { CreateSalaryRubricDto } from './dto/salary-rubric.dto'
+import { Employee } from '../employee/entities/employee.entity'
 
 @Injectable()
 export class SalaryService {
@@ -36,7 +37,24 @@ export class SalaryService {
 
     @InjectRepository(SalaryRubric)
     private readonly salaryRubricRepository: Repository<SalaryRubric>,
+
+    @InjectRepository(Employee)
+    private readonly employeeRepository: Repository<Employee>,
   ) {}
+
+  private async getActiveEmployeeIdByUserId(userId: number): Promise<number> {
+    const employee = await this.employeeRepository.findOne({
+      where: { userId, status: 1 },
+    })
+
+    if (!employee) {
+      throw new BadRequestException(
+        'Usuário autenticado não está associado a um colaborador ativo',
+      )
+    }
+
+    return employee.id
+  }
 
   async findAll(query: SalaryQueryDto) {
     const page = query.page ?? 1
@@ -95,9 +113,11 @@ export class SalaryService {
 
   async saveSalaryToEmployee(
     createSalaryEmployeeDto: CreateSalaryEmployeeDto,
-    createdByEmployeeId: number,
+    createdByUserId: number,
   ): Promise<SalaryEmployee> {
     const { salaryId, employeeId } = createSalaryEmployeeDto
+    const createdByEmployeeId =
+      await this.getActiveEmployeeIdByUserId(createdByUserId)
 
     const salaryStructure = await this.salaryRepository.findOne({
       where: { id: salaryId },
@@ -195,9 +215,11 @@ export class SalaryService {
 
   async associateRubricToStructure(
     createSalaryRubricDto: CreateSalaryRubricDto,
-    createdByEmployeeCode: number,
+    createdByUserId: number,
   ): Promise<SalaryRubric> {
     const { salaryStructureCode, rubricCode } = createSalaryRubricDto
+    const createdByEmployeeCode =
+      await this.getActiveEmployeeIdByUserId(createdByUserId)
 
     const salaryStructure = await this.salaryRepository.findOne({
       where: { id: salaryStructureCode },

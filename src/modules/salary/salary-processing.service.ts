@@ -28,6 +28,7 @@ import { AttendanceSituation } from '../attendance/dto/create-attendance.dto'
 import { ContractService } from '../contract/contract.service'
 import { ContractType } from '../contract/entities/contract.entity'
 import { AcademicService } from '../academic/academic.service'
+import { Employee } from '../employee/entities/employee.entity'
 
 const WORKED_HOURS_SITUATIONS = [
   AttendanceSituation.PRESENTE,
@@ -66,15 +67,35 @@ export class SalaryProcessingService {
     @InjectRepository(Attendance)
     private readonly attendanceRepository: Repository<Attendance>,
 
+    @InjectRepository(Employee)
+    private readonly employeeRepository: Repository<Employee>,
+
     private readonly contractService: ContractService,
 
     private readonly academicService: AcademicService,
   ) {}
 
+  private async getActiveEmployeeIdByUserId(userId: number): Promise<number> {
+    const employee = await this.employeeRepository.findOne({
+      where: { userId, status: 1 },
+    })
+
+    if (!employee) {
+      throw new BadRequestException(
+        'Usuário autenticado não está associado a um colaborador ativo',
+      )
+    }
+
+    return employee.id
+  }
+
   async process(
     createDto: CreateSalaryProcessingDto,
-    responsibleEmployeeId: number,
+    responsibleUserId: number,
   ): Promise<SalaryProcessing> {
+    const responsibleEmployeeId =
+      await this.getActiveEmployeeIdByUserId(responsibleUserId)
+
     await this.assertNoOpenProcessingInPeriod(
       createDto.startDate,
       createDto.endDate,
@@ -96,8 +117,11 @@ export class SalaryProcessingService {
   async validate(
     id: number,
     validateDto: ValidateSalaryProcessingDto,
-    validatorEmployeeId: number,
+    validatorUserId: number,
   ): Promise<SalaryProcessing> {
+    const validatorEmployeeId =
+      await this.getActiveEmployeeIdByUserId(validatorUserId)
+
     const processing = await this.processingRepository.findOneBy({ id })
 
     if (!processing) {
@@ -121,8 +145,11 @@ export class SalaryProcessingService {
 
   async reprocess(
     id: number,
-    responsibleEmployeeId: number,
+    responsibleUserId: number,
   ): Promise<SalaryProcessing> {
+    const responsibleEmployeeId =
+      await this.getActiveEmployeeIdByUserId(responsibleUserId)
+
     const original = await this.processingRepository.findOneBy({ id })
 
     if (!original) {
