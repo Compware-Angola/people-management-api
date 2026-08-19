@@ -8,7 +8,6 @@ import {
   Put,
   Req,
   UploadedFile,
-  UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common'
@@ -19,10 +18,7 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger'
-import {
-  FileFieldsInterceptor,
-  FileInterceptor,
-} from '@nestjs/platform-express'
+import { FileInterceptor } from '@nestjs/platform-express'
 import { TeacherApplicationsService } from '../services/teacher-applications.service'
 import { CreateApplicationDto } from '../dto/create-application.dto'
 import { UpdateAcademicEducationsDto } from '../dto/update-academic-educations.dto'
@@ -30,6 +26,8 @@ import { UpdateTeachingExperiencesDto } from '../dto/update-teaching-experiences
 import { UploadDocumentDto } from '../dto/upload-document.dto'
 import { mapMulterFile } from 'src/commons/utils/multer-file.mapper'
 import { RemoteJwtAuthGuard } from 'src/commons/guards/remote-jwt-auth.guard'
+import { RegisterDocumentDto } from '../dto/register-document.dto'
+import { PersonalDto } from '../dto/personal.dto'
 
 @ApiTags('Applications')
 @Controller('applications')
@@ -38,37 +36,17 @@ export class ApplicationsController {
 
   @Post('teachers')
   @ApiOperation({ summary: 'Criar candidatura docente' })
-  @ApiConsumes('multipart/form-data')
-  @UseInterceptors(
-    FileFieldsInterceptor([
-      { name: 'identificationDocument', maxCount: 1 },
-      { name: 'cv', maxCount: 1 },
-      { name: 'courseCertificate', maxCount: 1 },
-      { name: 'pedagogicalAggregation', maxCount: 1 },
-      { name: 'certificates', maxCount: 20 },
-    ]),
-  )
-  create(
-    @Body() dto: CreateApplicationDto,
-    @UploadedFiles()
-    files: {
-      identificationDocument: Express.Multer.File[]
-      cv: Express.Multer.File[]
-      courseCertificate: Express.Multer.File[]
-      pedagogicalAggregation: Express.Multer.File[]
-      certificates: Express.Multer.File[]
-    },
-  ) {
-    return this.service.create({
-      ...dto,
-      files: {
-        identificationDocument: mapMulterFile(files.identificationDocument[0]),
-        cv: mapMulterFile(files.cv[0]),
-        courseCertificate: mapMulterFile(files.courseCertificate[0]),
-        pedagogicalAggregation: mapMulterFile(files.pedagogicalAggregation[0]),
-        certificates: files.certificates.map(mapMulterFile),
-      },
-    })
+  create(@Body() dto: CreateApplicationDto) {
+    return this.service.create(dto)
+  }
+
+  @Post('teachers/check-personal')
+  @ApiOperation({
+    summary:
+      'Verificar se e-mail, número de documento ou telefone já estão associados a um candidato, antes de submeter a candidatura',
+  })
+  checkPersonal(@Body() dto: PersonalDto) {
+    return this.service.checkPersonalUniqueness(dto)
   }
 
   @ApiBearerAuth()
@@ -129,5 +107,36 @@ export class ApplicationsController {
       dto.documentTypeId,
       mapMulterFile(file),
     )
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(RemoteJwtAuthGuard)
+  @Post(':candidateId/documents/register')
+  @ApiOperation({
+    summary:
+      'Registar documento da candidatura a partir de um ficheiro já enviado ao storage',
+  })
+  registerDocument(
+    @Req() req: any,
+    @Param('candidateId', ParseIntPipe) candidateId: number,
+    @Body() dto: RegisterDocumentDto,
+  ) {
+    return this.service.registerDocument(
+      req.user.username,
+      candidateId,
+      dto.documentTypeId,
+      dto.key,
+    )
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(RemoteJwtAuthGuard)
+  @Post(':candidateId/renew')
+  @ApiOperation({ summary: 'Renovar candidatura docente' })
+  renewApplication(
+    @Req() req: any,
+    @Param('candidateId', ParseIntPipe) candidateId: number,
+  ) {
+    return this.service.renewApplication(req.user.username, candidateId)
   }
 }
