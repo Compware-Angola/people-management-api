@@ -8,7 +8,6 @@ import { VacancyState } from 'src/modules/vacancy-states/entity/vacancy-state.en
 import { User } from 'src/modules/user/entities/user.entity'
 import { VacanciesController } from './controllers/vacancies.controller'
 import { VacanciesService } from './services/vacancies.service'
-import { StorageService } from 'src/commons/services/storage.service'
 
 @Module({
   imports: [
@@ -22,7 +21,7 @@ import { StorageService } from 'src/commons/services/storage.service'
     ]),
   ],
   controllers: [VacanciesController],
-  providers: [VacanciesService, StorageService],
+  providers: [VacanciesService],
   exports: [VacanciesService],
 })
 export class VacanciesModule {}
