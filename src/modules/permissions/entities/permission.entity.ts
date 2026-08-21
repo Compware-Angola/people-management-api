@@ -17,8 +17,11 @@ export class Permission {
   @PrimaryGeneratedColumn('identity', { name: 'CODIGO' })
   id: number
 
-  @Column({ name: 'DESCRICAO', unique: true })
-  description: string
+  @Column({ name: 'SLUG', unique: true })
+  slug: string
+
+  @Column({ name: 'DESCRICAO', type: 'varchar', nullable: true })
+  description: string | null
 
   @Column({ name: 'ESTADO', type: 'number', default: 1 })
   status: number
