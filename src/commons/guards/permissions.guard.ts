@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   CanActivate,
   ExecutionContext,
@@ -20,10 +21,10 @@ export class PermissionsGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     const enablePermissionGuard =
-      process.env.ENABLE_PERMISSION_GUARD !== 'false';
+      process.env.ENABLE_PERMISSION_GUARD !== 'false'
 
     if (!enablePermissionGuard) {
-      return true;
+      return true
     }
 
     const requiredPermissions = this.reflector.getAllAndOverride<string[]>(
@@ -36,15 +37,16 @@ export class PermissionsGuard implements CanActivate {
     }
 
     const { user } = context.switchToHttp().getRequest()
-
+    console.log({ per: user.permissions }, "aqui")
     if (!user || !user.permissions) {
       throw new ForbiddenException('Usuário não possui permissões')
     }
 
     const req = context.switchToHttp().getRequest<Request>()
     const userPermissions: string[] = req.user?.permissions || []
-
-    if (userPermissions.includes('full_access')) {
+    if (
+      userPermissions.map((e) => e.toLocaleLowerCase()).includes('full_access')
+    ) {
       return true
     }
 

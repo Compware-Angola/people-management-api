@@ -367,6 +367,7 @@ export class VacanciesService {
     )
 
     Object.assign(vacancy, {
+      state: targetState,
       stateId: targetState.code,
       publicationDate,
       updatedAt: new Date(),
@@ -406,6 +407,7 @@ export class VacanciesService {
     )
 
     Object.assign(vacancy, {
+      state: suspendedState,
       stateId: suspendedState.code,
       justification: dto.justification,
       updatedAt: new Date(),
@@ -442,6 +444,7 @@ export class VacanciesService {
     )
 
     Object.assign(vacancy, {
+      state: publishedState,
       stateId: publishedState.code,
       updatedAt: new Date(),
       updatedBy: authenticatedUserId,
@@ -473,6 +476,7 @@ export class VacanciesService {
     const closedState = await this.findStateByAcronym(VacancyStateCode.CLOSED)
 
     Object.assign(vacancy, {
+      state: closedState,
       stateId: closedState.code,
       justification: dto.justification,
       updatedAt: new Date(),
@@ -515,6 +519,7 @@ export class VacanciesService {
     )
 
     Object.assign(vacancy, {
+      state: cancelledState,
       stateId: cancelledState.code,
       justification: dto.justification,
       updatedAt: new Date(),
