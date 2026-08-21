@@ -18,6 +18,8 @@ import { RequisitionStatesModule } from './modules/requisition-states/requisitio
 import { RequisitionsModule } from './modules/requisitions/requisitions.module'
 import { VacancyStatesModule } from './modules/vacancy-states/vacancy-states.module'
 import { VacanciesModule } from './modules/vacancies/vacancies.module'
+import { SalaryModule } from './modules/salary/salary.module'
+import { ContractModule } from './modules/contract/contract.module'
 
 @Module({
   imports: [
@@ -39,6 +41,10 @@ import { VacanciesModule } from './modules/vacancies/vacancies.module'
     RequisitionsModule,
     VacancyStatesModule,
     VacanciesModule,
+    ApplicationsModule,
+    LeavesModule,
+    SalaryModule,
+    ContractModule,
   ],
 })
 export class AppModule {}

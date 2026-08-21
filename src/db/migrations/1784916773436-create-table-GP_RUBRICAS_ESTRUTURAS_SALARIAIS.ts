@@ -1,0 +1,36 @@
+import { MigrationInterface, QueryRunner } from "typeorm";
+
+export class CreateTableGPRUBRICASESTRUTURASSALARIAIS1784916773436 implements MigrationInterface {
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
+      CREATE TABLE GP_RUBRICAS_ESTRUTURAS_SALARIAIS (
+        CODIGO_ESTRUTURA_SALARIAL NUMBER NOT NULL,
+        CODIGO_RUBRICA NUMBER NOT NULL,
+        CODIGO_COLABORADOR_CADASTRADOR NUMBER NOT NULL,
+
+        CONSTRAINT PK_GP_RUBRICAS_ESTRUTURAS PRIMARY KEY (
+          CODIGO_ESTRUTURA_SALARIAL,
+          CODIGO_RUBRICA
+        ),
+
+        CONSTRAINT FK_GP_RUBRICA_ESTRUTURA FOREIGN KEY (
+          CODIGO_ESTRUTURA_SALARIAL
+        ) REFERENCES GP_ESTRUTURAS_SALARIAIS (CODIGO),
+
+        CONSTRAINT FK_GP_RUBRICA_RUBRICA FOREIGN KEY (
+          CODIGO_RUBRICA
+        ) REFERENCES GP_RUBRICAS (CODIGO),
+
+        CONSTRAINT FK_GP_RUBRICA_CADASTRADOR FOREIGN KEY (
+          CODIGO_COLABORADOR_CADASTRADOR
+        ) REFERENCES GP_COLABORADORES (CODIGO)
+      )
+    `)
+  }
+
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
+      DROP TABLE GP_RUBRICAS_ESTRUTURAS_SALARIAIS
+    `)
+  }
+}
