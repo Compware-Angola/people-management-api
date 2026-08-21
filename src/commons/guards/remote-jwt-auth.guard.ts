@@ -67,8 +67,6 @@ export class RemoteJwtAuthGuard implements CanActivate {
 
   private async validateToken(token: string): Promise<DecodedUserPayload> {
     try {
-      console.log(`Validando token remotamente em ${this.authServiceUrl}`)
-
       const { data } = await this.http.get<ValidateTokenResponse>(
         this.authServiceUrl,
         { headers: { Authorization: `Bearer ${token}` } },

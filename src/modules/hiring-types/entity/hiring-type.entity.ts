@@ -23,7 +23,7 @@ export class HiringType {
     name: 'CODIGO',
     type: 'number',
   })
-  code: number
+  declare code: number
 
   @Column({
     name: 'SIGLA',
@@ -31,7 +31,7 @@ export class HiringType {
     length: 20,
     nullable: false,
   })
-  acronym: string
+  declare acronym: string
 
   @Column({
     name: 'DESCRICAO',
@@ -39,7 +39,7 @@ export class HiringType {
     length: 150,
     nullable: false,
   })
-  description: string
+  declare description: string
 
   @Column({
     name: 'ESTADO',
@@ -49,7 +49,7 @@ export class HiringType {
     default: 1,
     nullable: false,
   })
-  status: number
+  declare status: number
 
   @Column({
     name: 'CRIADO_EM',
@@ -57,11 +57,11 @@ export class HiringType {
     default: () => 'SYSDATE',
     nullable: false,
   })
-  createdAt: Date
+  declare createdAt: Date
 
   @DeleteDateColumn({
     name: 'DELETADO_EM',
     type: 'date',
   })
-  deletedAt: Date | null
+  declare deletedAt: Date | null
 }
