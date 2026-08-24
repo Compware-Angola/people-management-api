@@ -9,12 +9,20 @@ import {
 
 export class CreatePermissionDto {
   @ApiProperty({
-    description: 'Nome único da permissão',
+    description: 'Slug único da permissão',
     example: 'USUARIO:CRIAR',
   })
   @IsString()
   @IsNotEmpty()
-  description: string
+  slug: string
+
+  @ApiPropertyOptional({
+    description: 'Descrição da permissão',
+    example: 'Permite criar usuários',
+  })
+  @IsString()
+  @IsOptional()
+  description?: string
 
   @ApiPropertyOptional({
     description: 'Estado da permissão (0 = Inativo, 1 = Ativo)',
@@ -29,8 +37,16 @@ export class CreatePermissionDto {
 
 export class UpdatePermissionDto {
   @ApiPropertyOptional({
-    description: 'Nome único da permissão',
+    description: 'Slug único da permissão',
     example: 'USUARIO:CRIAR',
+  })
+  @IsString()
+  @IsOptional()
+  slug?: string
+
+  @ApiPropertyOptional({
+    description: 'Descrição da permissão',
+    example: 'Permite criar usuários',
   })
   @IsString()
   @IsOptional()
