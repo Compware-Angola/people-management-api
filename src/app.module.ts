@@ -21,6 +21,7 @@ import { VacanciesModule } from './modules/vacancies/vacancies.module'
 import { SalaryModule } from './modules/salary/salary.module'
 import { ContractModule } from './modules/contract/contract.module'
 import { CriteriaModule } from './modules/criteria/criteria.module'
+import { CriteriaVacancyModule } from './modules/criteria-vacancy/criteria-vacancy.module'
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { CriteriaModule } from './modules/criteria/criteria.module'
     SalaryModule,
     ContractModule,
     CriteriaModule,
+    CriteriaVacancyModule,
   ],
 })
 export class AppModule {}
