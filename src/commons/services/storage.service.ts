@@ -15,6 +15,11 @@ type ResponseUpload = {
   }
 }
 
+type ResponseDelete = {
+  message: string
+  key: string
+}
+
 const UPLOAD_API_URL = process.env.UPLOAD_API_URL ?? 'http://[::1]:3001'
 
 @Injectable()
@@ -49,6 +54,35 @@ export class StorageService {
     }
 
     const data = (await response.json()) as ResponseUpload
+
+    return data
+  }
+
+  async delete(key: string): Promise<ResponseDelete> {
+    let response: Response
+    try {
+      response = await fetch(`${UPLOAD_API_URL}/upload-s3`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key }),
+      })
+    } catch (error) {
+      this.logger.error('Erro de rede ao apagar o ficheiro no storage', error)
+      throw new InternalServerErrorException(
+        'Não foi possível apagar o ficheiro',
+      )
+    }
+
+    if (!response.ok) {
+      this.logger.error(
+        `Delete falhou: ${response.status} ${response.statusText}`,
+      )
+      throw new InternalServerErrorException(
+        'Não foi possível apagar o ficheiro',
+      )
+    }
+
+    const data = (await response.json()) as ResponseDelete
 
     return data
   }

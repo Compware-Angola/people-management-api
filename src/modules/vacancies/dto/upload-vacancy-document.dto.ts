@@ -31,4 +31,21 @@ export class UploadVacancyDocumentDto {
   @IsString()
   @MaxLength(255)
   description?: string
+
+  @ApiProperty({
+    description:
+      'Chave do ficheiro já enviado ao serviço de armazenamento pelo frontend',
+  })
+  @IsString()
+  @IsNotEmpty()
+  key: string
+
+  @ApiProperty({
+    description: 'Nome original do ficheiro enviado',
+    maxLength: 255,
+  })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(255)
+  originalName: string
 }

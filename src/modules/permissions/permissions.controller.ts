@@ -7,8 +7,15 @@ import {
   Param,
   Delete,
   Query,
+  Req,
+  UseGuards,
 } from '@nestjs/common'
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger'
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger'
 import { PermissionsService } from './permissions.service'
 import {
   CreatePermissionDto,
@@ -21,11 +28,22 @@ import {
   AssignPermissionsDto,
   AssignUsersDto,
 } from './dto/group.dto'
+import { RemoteJwtAuthGuard } from 'src/commons/guards/remote-jwt-auth.guard'
+import { PermissionsGuard } from 'src/commons/guards/permissions.guard'
 
 @ApiTags('Permissions & Groups')
+@ApiBearerAuth()
+@UseGuards(RemoteJwtAuthGuard, PermissionsGuard)
 @Controller('permissions')
 export class PermissionsController {
   constructor(private readonly permissionsService: PermissionsService) {}
+  @Get('me')
+  async myPermissions(@Req() req: any) {
+    const permissions = await this.permissionsService.myPermissions(
+      Number(req.user.sub),
+    )
+    return { permissions }
+  }
 
   @Get('groups')
   @ApiOperation({

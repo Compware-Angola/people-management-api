@@ -8,8 +8,6 @@ import {
   Query,
   Req,
   UseGuards,
-  UseInterceptors,
-  UploadedFile,
 } from '@nestjs/common'
 import {
   ApiTags,
@@ -17,9 +15,7 @@ import {
   ApiResponse,
   ApiParam,
   ApiBearerAuth,
-  ApiConsumes,
 } from '@nestjs/swagger'
-import { FileInterceptor } from '@nestjs/platform-express'
 import { VacanciesService } from '../services/vacancies.service'
 import { Vacancy } from '../entity/vacancy.entity'
 import { CreateVacancyDto } from '../dto/create-vacancy.dto'
@@ -30,18 +26,13 @@ import { UploadVacancyDocumentDto } from '../dto/upload-vacancy-document.dto'
 import { RemoteJwtAuthGuard } from 'src/commons/guards/remote-jwt-auth.guard'
 import { PermissionsGuard } from 'src/commons/guards/permissions.guard'
 import { Permissions } from 'src/commons/decorators/permissions.decorator'
-import { StorageService } from 'src/commons/services/storage.service'
-import { mapMulterFile } from 'src/commons/utils/multer-file.mapper'
 
 @ApiTags('Vacancies')
 @ApiBearerAuth()
 @Controller('vacancies')
 @UseGuards(RemoteJwtAuthGuard, PermissionsGuard)
 export class VacanciesController {
-  constructor(
-    private readonly vacanciesService: VacanciesService,
-    private readonly storageService: StorageService,
-  ) {}
+  constructor(private readonly vacanciesService: VacanciesService) {}
 
   @Post()
   @Permissions('write:vacancies')
@@ -114,34 +105,28 @@ export class VacanciesController {
   @Post(':code/documents')
   @Permissions('write:vacancies')
   @ApiOperation({
-    summary: 'Anexar documento à vaga (ex.: Edital de Contratação)',
+    summary:
+      'Registar documento da vaga (ex.: Edital de Contratação) a partir de um ficheiro já enviado ao storage',
   })
-  @ApiConsumes('multipart/form-data')
   @ApiParam({
     name: 'code',
     description: 'Código da vaga',
     example: 'VAG-2026-000001',
   })
-  @UseInterceptors(FileInterceptor('file'))
   @ApiResponse({
     status: 201,
     description: 'Documento anexado com sucesso.',
     type: Vacancy,
   })
-  async uploadDocument(
+  uploadDocument(
     @Param('code') code: string,
     @Body() dto: UploadVacancyDocumentDto,
-    @UploadedFile() file: Express.Multer.File,
     @Req() req: any,
   ) {
-    const uploadResult = await this.storageService.upload(mapMulterFile(file))
     return this.vacanciesService.addDocument(
       code,
       dto,
-      {
-        path: uploadResult.file.path,
-        originalName: uploadResult.file.originalname,
-      },
+      { path: dto.key, originalName: dto.originalName },
       req.user.sub,
     )
   }

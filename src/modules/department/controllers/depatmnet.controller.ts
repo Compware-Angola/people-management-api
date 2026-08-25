@@ -13,7 +13,13 @@ import {
   UseGuards,
   Req,
 } from '@nestjs/common'
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger'
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiBearerAuth,
+} from '@nestjs/swagger'
 import { DepartmentsService } from '../services/department.service'
 import { Department } from '../entity/department.entity'
 import { CreateDepartmentDto } from '../dto/create-department.dto'
@@ -54,7 +60,7 @@ export class DepartmentsController {
   }
 
   @Get('my')
-@ApiOperation({ summary: 'Buscar um departamento pelo código' })
+  @ApiOperation({ summary: 'Buscar um departamento pelo código' })
   @ApiResponse({
     status: 200,
     description: 'Departamento encontrado.',
@@ -63,7 +69,7 @@ export class DepartmentsController {
   myDepartments(@Req() req: any) {
     return this.departmentsService.myDepartment(req.user.sub)
   }
-  
+
   @Get(':code')
   @ApiOperation({ summary: 'Buscar um departamento pelo código' })
   @ApiParam({ name: 'code', description: 'Código do departamento', example: 1 })
