@@ -18,6 +18,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger'
 import { RemoteJwtAuthGuard } from '../../commons/guards/remote-jwt-auth.guard'
 import { PermissionsGuard } from '../../commons/guards/permissions.guard'
 import { Permissions } from '../../commons/decorators/permissions.decorator'
+import { PermissionsEnum } from '../../commons/enums/permissions.enum'
 
 @Controller('users')
 @ApiTags('Users')
@@ -28,28 +29,28 @@ export class UserController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @Permissions('write:users')
+  @Permissions(PermissionsEnum.WRITE_USERS)
   @ApiOperation({ summary: 'Criar um novo usuário' })
   async create(@Body() createUserDto: CreateUserDto) {
     return this.userService.create(createUserDto)
   }
 
   @Get()
-  @Permissions('read:users')
+  @Permissions(PermissionsEnum.READ_USERS)
   @ApiOperation({ summary: 'Listar todos os usuários' })
   findAll(@Query() query: UserQueryDto) {
     return this.userService.findAll(query)
   }
 
   @Get(':id')
-  @Permissions('read:users')
+  @Permissions(PermissionsEnum.READ_USERS)
   @ApiOperation({ summary: 'Buscar um usuário pelo ID' })
   findOne(@Param('id') id: string) {
     return this.userService.findOne(+id)
   }
 
   @Patch(':id')
-  @Permissions('write:users')
+  @Permissions(PermissionsEnum.WRITE_USERS)
   @ApiOperation({ summary: 'Atualizar um usuário' })
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.userService.update(+id, updateUserDto)

@@ -1,15 +1,35 @@
-import { Controller, Get, Param, Query, ParseIntPipe } from '@nestjs/common'
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger'
+import {
+  Controller,
+  Get,
+  Param,
+  Query,
+  ParseIntPipe,
+  UseGuards,
+} from '@nestjs/common'
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiBearerAuth,
+} from '@nestjs/swagger'
 import { VacancyStatesService } from '../services/vacancy-states.service'
 import { VacancyState } from '../entity/vacancy-state.entity'
 import { ListVacancyStatesQueryDto } from '../dto/list-vacancy-states-query.dto'
+import { RemoteJwtAuthGuard } from 'src/commons/guards/remote-jwt-auth.guard'
+import { PermissionsGuard } from 'src/commons/guards/permissions.guard'
+import { Permissions } from 'src/commons/decorators/permissions.decorator'
+import { PermissionsEnum } from 'src/commons/enums/permissions.enum'
 
 @ApiTags('Vacancy States')
+@ApiBearerAuth()
+@UseGuards(RemoteJwtAuthGuard, PermissionsGuard)
 @Controller('vacancy-states')
 export class VacancyStatesController {
   constructor(private readonly vacancyStatesService: VacancyStatesService) {}
 
   @Get()
+  @Permissions(PermissionsEnum.READ_VACANCY_STATES)
   @ApiOperation({
     summary:
       'Listar estados de vaga (seed por regra de negócio; com paginação e busca)',
@@ -24,6 +44,7 @@ export class VacancyStatesController {
   }
 
   @Get(':code')
+  @Permissions(PermissionsEnum.READ_VACANCY_STATES)
   @ApiOperation({ summary: 'Buscar um estado de vaga pelo código' })
   @ApiParam({
     name: 'code',

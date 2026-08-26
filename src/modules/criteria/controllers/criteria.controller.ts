@@ -30,6 +30,8 @@ import { ListCriteriaQueryDto } from '../dto/list-criteria-query.dto'
 
 import { RemoteJwtAuthGuard } from 'src/commons/guards/remote-jwt-auth.guard'
 import { PermissionsGuard } from 'src/commons/guards/permissions.guard'
+import { Permissions } from 'src/commons/decorators/permissions.decorator'
+import { PermissionsEnum } from 'src/commons/enums/permissions.enum'
 
 @ApiTags('Criteria')
 @ApiBearerAuth()
@@ -39,6 +41,7 @@ export class CriteriaController {
   constructor(private readonly criteriaService: CriteriaService) {}
 
   @Post()
+  @Permissions(PermissionsEnum.WRITE_CRITERIA)
   @ApiOperation({
     summary: 'Criar um novo critério',
   })
@@ -56,6 +59,7 @@ export class CriteriaController {
   }
 
   @Get()
+  @Permissions(PermissionsEnum.READ_CRITERIA)
   @ApiOperation({
     summary: 'Listar critérios com paginação, busca e filtros',
   })
@@ -69,6 +73,7 @@ export class CriteriaController {
   }
 
   @Get(':id')
+  @Permissions(PermissionsEnum.READ_CRITERIA)
   @ApiOperation({
     summary: 'Buscar um critério pelo código',
   })
@@ -91,6 +96,7 @@ export class CriteriaController {
   }
 
   @Patch(':id')
+  @Permissions(PermissionsEnum.WRITE_CRITERIA)
   @ApiOperation({
     summary: 'Atualizar um critério',
   })
@@ -120,6 +126,7 @@ export class CriteriaController {
   }
 
   @Delete(':id')
+  @Permissions(PermissionsEnum.WRITE_CRITERIA)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: 'Remover um critério',

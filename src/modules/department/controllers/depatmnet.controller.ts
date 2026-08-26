@@ -27,6 +27,8 @@ import { ListDepartmentsQueryDto } from '../dto/list-departments-query.dto'
 import { UpdateDepartmentDto } from '../dto/update-department.dto'
 import { RemoteJwtAuthGuard } from 'src/commons/guards/remote-jwt-auth.guard'
 import { PermissionsGuard } from 'src/commons/guards/permissions.guard'
+import { Permissions } from 'src/commons/decorators/permissions.decorator'
+import { PermissionsEnum } from 'src/commons/enums/permissions.enum'
 
 @ApiTags('Departments')
 @ApiBearerAuth()
@@ -36,6 +38,7 @@ export class DepartmentsController {
   constructor(private readonly departmentsService: DepartmentsService) {}
 
   @Post()
+  @Permissions(PermissionsEnum.WRITE_DEPARTMENTS)
   @ApiOperation({ summary: 'Criar um novo departamento' })
   @ApiResponse({
     status: 201,
@@ -47,6 +50,7 @@ export class DepartmentsController {
   }
 
   @Get()
+  @Permissions(PermissionsEnum.READ_DEPARTMENTS)
   @ApiOperation({
     summary: 'Listar departamentos (com paginação, busca e filtro por status)',
   })
@@ -60,6 +64,7 @@ export class DepartmentsController {
   }
 
   @Get('my')
+  @Permissions(PermissionsEnum.READ_DEPARTMENTS)
   @ApiOperation({ summary: 'Buscar um departamento pelo código' })
   @ApiResponse({
     status: 200,
@@ -71,6 +76,7 @@ export class DepartmentsController {
   }
 
   @Get(':code')
+  @Permissions(PermissionsEnum.READ_DEPARTMENTS)
   @ApiOperation({ summary: 'Buscar um departamento pelo código' })
   @ApiParam({ name: 'code', description: 'Código do departamento', example: 1 })
   @ApiResponse({
@@ -84,6 +90,7 @@ export class DepartmentsController {
   }
 
   @Patch(':code')
+  @Permissions(PermissionsEnum.WRITE_DEPARTMENTS)
   @ApiOperation({ summary: 'Atualizar um departamento' })
   @ApiParam({ name: 'code', description: 'Código do departamento', example: 1 })
   @ApiResponse({
@@ -100,6 +107,7 @@ export class DepartmentsController {
   }
 
   @Delete(':code')
+  @Permissions(PermissionsEnum.WRITE_DEPARTMENTS)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Remover um departamento' })
   @ApiParam({ name: 'code', description: 'Código do departamento', example: 1 })

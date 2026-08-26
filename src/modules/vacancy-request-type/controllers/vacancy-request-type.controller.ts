@@ -26,6 +26,8 @@ import { UpdateVacancyRequestTypeDto } from '../dto/update-vacancy-request-type.
 import { ListVacancyRequestTypeQueryDto } from '../dto/list-vacancy-request-type-query.dto'
 import { RemoteJwtAuthGuard } from 'src/commons/guards/remote-jwt-auth.guard'
 import { PermissionsGuard } from 'src/commons/guards/permissions.guard'
+import { Permissions } from 'src/commons/decorators/permissions.decorator'
+import { PermissionsEnum } from 'src/commons/enums/permissions.enum'
 
 @ApiTags('Vacancy Request Types')
 @ApiBearerAuth()
@@ -37,6 +39,7 @@ export class VacancyRequestTypeController {
   ) {}
 
   @Post()
+  @Permissions(PermissionsEnum.WRITE_VACANCY_REQUEST_TYPES)
   @ApiOperation({
     summary: 'Criar um novo tipo de requisição de vaga',
   })
@@ -54,6 +57,7 @@ export class VacancyRequestTypeController {
   }
 
   @Get()
+  @Permissions(PermissionsEnum.READ_VACANCY_REQUEST_TYPES)
   @ApiOperation({
     summary:
       'Listar tipos de requisição de vaga com paginação, busca e filtros',
@@ -68,6 +72,7 @@ export class VacancyRequestTypeController {
   }
 
   @Get(':id')
+  @Permissions(PermissionsEnum.READ_VACANCY_REQUEST_TYPES)
   @ApiOperation({
     summary: 'Buscar um tipo de requisição de vaga pelo código',
   })
@@ -90,6 +95,7 @@ export class VacancyRequestTypeController {
   }
 
   @Patch(':id')
+  @Permissions(PermissionsEnum.WRITE_VACANCY_REQUEST_TYPES)
   @ApiOperation({
     summary: 'Atualizar um tipo de requisição de vaga',
   })
@@ -119,6 +125,7 @@ export class VacancyRequestTypeController {
   }
 
   @Delete(':id')
+  @Permissions(PermissionsEnum.WRITE_VACANCY_REQUEST_TYPES)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: 'Remover um tipo de requisição de vaga',

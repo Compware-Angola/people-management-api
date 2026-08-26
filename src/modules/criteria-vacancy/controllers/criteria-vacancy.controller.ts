@@ -30,6 +30,8 @@ import { ListCriteriaVacancyQueryDto } from '../dto/list-criteria-vacancy-query.
 
 import { RemoteJwtAuthGuard } from 'src/commons/guards/remote-jwt-auth.guard'
 import { PermissionsGuard } from 'src/commons/guards/permissions.guard'
+import { Permissions } from 'src/commons/decorators/permissions.decorator'
+import { PermissionsEnum } from 'src/commons/enums/permissions.enum'
 
 @ApiTags('Criteria Vacancies')
 @ApiBearerAuth()
@@ -41,6 +43,7 @@ export class CriteriaVacancyController {
   ) {}
 
   @Post()
+  @Permissions(PermissionsEnum.WRITE_CRITERIA_VACANCIES)
   @ApiOperation({
     summary: 'Associar um critério a uma vaga',
   })
@@ -62,6 +65,7 @@ export class CriteriaVacancyController {
   }
 
   @Get()
+  @Permissions(PermissionsEnum.READ_CRITERIA_VACANCIES)
   @ApiOperation({
     summary: 'Listar critérios associados às vagas',
   })
@@ -75,6 +79,7 @@ export class CriteriaVacancyController {
   }
 
   @Get(':id')
+  @Permissions(PermissionsEnum.READ_CRITERIA_VACANCIES)
   @ApiOperation({
     summary: 'Buscar uma associação de vaga e critério pelo código',
   })
@@ -97,6 +102,7 @@ export class CriteriaVacancyController {
   }
 
   @Patch(':id')
+  @Permissions(PermissionsEnum.WRITE_CRITERIA_VACANCIES)
   @ApiOperation({
     summary: 'Atualizar uma associação de vaga e critério',
   })
@@ -126,6 +132,7 @@ export class CriteriaVacancyController {
   }
 
   @Delete(':id')
+  @Permissions(PermissionsEnum.WRITE_CRITERIA_VACANCIES)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: 'Remover um critério de uma vaga',

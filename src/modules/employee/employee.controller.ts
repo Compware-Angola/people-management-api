@@ -20,6 +20,7 @@ import { CreateFileDto } from './dto/file/create-file.dto'
 import { RemoteJwtAuthGuard } from '../../commons/guards/remote-jwt-auth.guard'
 import { PermissionsGuard } from '../../commons/guards/permissions.guard'
 import { Permissions } from '../../commons/decorators/permissions.decorator'
+import { PermissionsEnum } from '../../commons/enums/permissions.enum'
 
 @Controller('employees')
 @ApiTags('Employees')
@@ -30,7 +31,7 @@ export class EmployeeController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @Permissions('write:employees')
+  @Permissions(PermissionsEnum.WRITE_EMPLOYEES)
   @ApiOperation({ summary: 'Criar um novo colaborador' })
   async create(@Body() createEmployeeDto: CreateEmployeeDto) {
     return this.employeeService.create(createEmployeeDto)
@@ -38,20 +39,20 @@ export class EmployeeController {
 
   @Get()
   @ApiOperation({ summary: 'Listar todos os colaboradores' })
-  @Permissions('read:employees')
+  @Permissions(PermissionsEnum.READ_EMPLOYEES)
   findAll(@Query() query: EmployeeQueryDto) {
     return this.employeeService.findAll(query)
   }
 
   @Get(':id')
-  @Permissions('read:employees')
+  @Permissions(PermissionsEnum.READ_EMPLOYEES)
   @ApiOperation({ summary: 'Buscar um colaborador pelo ID' })
   findOne(@Param('id') id: string) {
     return this.employeeService.findOne(+id)
   }
 
   @Patch(':id')
-  @Permissions('write:employees')
+  @Permissions(PermissionsEnum.WRITE_EMPLOYEES)
   @ApiOperation({ summary: 'Atualizar um colaborador' })
   update(
     @Param('id') id: string,
@@ -62,7 +63,7 @@ export class EmployeeController {
 
   @Post('files')
   @HttpCode(HttpStatus.CREATED)
-  @Permissions('write:employees')
+  @Permissions(PermissionsEnum.WRITE_EMPLOYEES)
   @ApiOperation({ summary: 'Adicionar arquivo ao colaborador' })
   async addFile(@Body() createFileDto: CreateFileDto) {
     return this.employeeService.addFile(createFileDto)
@@ -70,7 +71,7 @@ export class EmployeeController {
 
   @Delete('files/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Permissions('write:employees')
+  @Permissions(PermissionsEnum.WRITE_EMPLOYEES)
   @ApiOperation({ summary: 'Remover arquivo do colaborador' })
   async removeFile(@Param('id') id: string) {
     await this.employeeService.removeFile(+id)

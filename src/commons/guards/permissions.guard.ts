@@ -8,6 +8,7 @@ import {
 import { Reflector } from '@nestjs/core'
 import { Request } from 'express'
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator'
+import { PermissionsEnum } from '../enums/permissions.enum'
 
 declare module 'express' {
   interface Request {
@@ -45,7 +46,9 @@ export class PermissionsGuard implements CanActivate {
     const req = context.switchToHttp().getRequest<Request>()
     const userPermissions: string[] = req.user?.permissions || []
     if (
-      userPermissions.map((e) => e.toLocaleLowerCase()).includes('full_access')
+      userPermissions
+        .map((e) => e.toLocaleLowerCase())
+        .includes(PermissionsEnum.FULL_ACCESS)
     ) {
       return true
     }
