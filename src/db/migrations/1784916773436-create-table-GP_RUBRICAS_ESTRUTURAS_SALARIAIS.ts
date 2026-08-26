@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm'
 
 export class CreateTableGPRUBRICASESTRUTURASSALARIAIS1784916773436 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {

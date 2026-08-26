@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { MigrationInterface, QueryRunner } from 'typeorm'
 import { PermissionsEnum } from '../../commons/enums/permissions.enum'
 
@@ -10,15 +11,24 @@ const permissions: PermissionSeed[] = [
   { slug: PermissionsEnum.FULL_ACCESS, description: 'Acesso total ao sistema' },
 
   { slug: PermissionsEnum.READ_USERS, description: 'Consultar utilizadores' },
-  { slug: PermissionsEnum.WRITE_USERS, description: 'Criar e editar utilizadores' },
+  {
+    slug: PermissionsEnum.WRITE_USERS,
+    description: 'Criar e editar utilizadores',
+  },
 
-  { slug: PermissionsEnum.READ_EMPLOYEES, description: 'Consultar colaboradores' },
+  {
+    slug: PermissionsEnum.READ_EMPLOYEES,
+    description: 'Consultar colaboradores',
+  },
   {
     slug: PermissionsEnum.WRITE_EMPLOYEES,
     description: 'Criar e editar colaboradores',
   },
 
-  { slug: PermissionsEnum.READ_DEPARTMENTS, description: 'Consultar departamentos' },
+  {
+    slug: PermissionsEnum.READ_DEPARTMENTS,
+    description: 'Consultar departamentos',
+  },
   {
     slug: PermissionsEnum.WRITE_DEPARTMENTS,
     description: 'Criar e editar departamentos',
@@ -34,7 +44,10 @@ const permissions: PermissionSeed[] = [
   },
 
   { slug: PermissionsEnum.READ_POSITIONS, description: 'Consultar cargos' },
-  { slug: PermissionsEnum.WRITE_POSITIONS, description: 'Criar e editar cargos' },
+  {
+    slug: PermissionsEnum.WRITE_POSITIONS,
+    description: 'Criar e editar cargos',
+  },
 
   {
     slug: PermissionsEnum.READ_HIRING_TYPES,
@@ -80,7 +93,10 @@ const permissions: PermissionSeed[] = [
   },
 
   { slug: PermissionsEnum.READ_CRITERIA, description: 'Consultar critérios' },
-  { slug: PermissionsEnum.WRITE_CRITERIA, description: 'Criar e editar critérios' },
+  {
+    slug: PermissionsEnum.WRITE_CRITERIA,
+    description: 'Criar e editar critérios',
+  },
 
   {
     slug: PermissionsEnum.READ_CRITERIA_VACANCIES,
@@ -100,7 +116,10 @@ const permissions: PermissionSeed[] = [
     description: 'Atualizar candidaturas',
   },
 
-  { slug: PermissionsEnum.READ_ATTENDANCE, description: 'Consultar assiduidade' },
+  {
+    slug: PermissionsEnum.READ_ATTENDANCE,
+    description: 'Consultar assiduidade',
+  },
   {
     slug: PermissionsEnum.WRITE_ATTENDANCE,
     description: 'Criar e editar assiduidade',
@@ -113,13 +132,22 @@ const permissions: PermissionSeed[] = [
   },
 
   { slug: PermissionsEnum.READ_VACATIONS, description: 'Consultar férias' },
-  { slug: PermissionsEnum.WRITE_VACATIONS, description: 'Criar e editar férias' },
+  {
+    slug: PermissionsEnum.WRITE_VACATIONS,
+    description: 'Criar e editar férias',
+  },
 
   { slug: PermissionsEnum.READ_LEAVES, description: 'Consultar licenças' },
-  { slug: PermissionsEnum.WRITE_LEAVES, description: 'Criar e editar licenças' },
+  {
+    slug: PermissionsEnum.WRITE_LEAVES,
+    description: 'Criar e editar licenças',
+  },
 
   { slug: PermissionsEnum.READ_CONTRACTS, description: 'Consultar contratos' },
-  { slug: PermissionsEnum.WRITE_CONTRACTS, description: 'Criar e editar contratos' },
+  {
+    slug: PermissionsEnum.WRITE_CONTRACTS,
+    description: 'Criar e editar contratos',
+  },
 
   {
     slug: PermissionsEnum.READ_SALARIES,
@@ -139,7 +167,10 @@ const permissions: PermissionSeed[] = [
     description: 'Processar, validar e reprocessar folha salarial',
   },
 
-  { slug: PermissionsEnum.READ_PERMISSIONS, description: 'Consultar permissões' },
+  {
+    slug: PermissionsEnum.READ_PERMISSIONS,
+    description: 'Consultar permissões',
+  },
   {
     slug: PermissionsEnum.WRITE_PERMISSIONS,
     description: 'Criar e administrar permissões e grupos',
