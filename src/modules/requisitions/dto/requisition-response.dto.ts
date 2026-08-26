@@ -41,6 +41,23 @@ class RequisitionHiringTypeDto {
   declare description: string
 }
 
+class RequisitionVacancyRequestTypeDto {
+  @ApiProperty({
+    description: 'Código do tipo de requisição de vaga',
+    example: 1,
+  })
+  declare id: number
+
+  @ApiProperty({ description: 'Sigla do tipo de requisição', example: 'DOC' })
+  declare acronym: string
+
+  @ApiProperty({
+    description: 'Descrição do tipo de requisição',
+    example: 'Vaga docente',
+  })
+  declare description: string
+}
+
 class RequisitionRequesterDto {
   @ApiProperty({ description: 'Código do solicitante', example: 1 })
   declare id: number
@@ -168,6 +185,9 @@ export class RequisitionResponseDto {
 
   @ApiProperty({ type: RequisitionHiringTypeDto })
   declare hiringType: RequisitionHiringTypeDto
+
+  @ApiProperty({ type: RequisitionVacancyRequestTypeDto })
+  declare vacancyRequestType: RequisitionVacancyRequestTypeDto
 
   @ApiProperty({ type: RequisitionRequesterDto })
   declare requester: RequisitionRequesterDto
