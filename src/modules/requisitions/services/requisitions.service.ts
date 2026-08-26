@@ -14,33 +14,47 @@ import {
   QueryFailedError,
   Repository,
 } from 'typeorm'
+
 import { Requisition } from '../entity/requisition.entity'
 import { RequisitionHistory } from '../entity/requisition-history.entity'
+
 import { Department } from 'src/modules/department/entity/department.entity'
 import { CostCenter } from 'src/modules/cost-center/entity/cost-center.entity'
 import { Position } from 'src/modules/Positions/entity/position.entity'
 import { HiringType } from 'src/modules/hiring-types/entity/hiring-type.entity'
+
 import {
   RequisitionState,
   RequisitionStateCode,
 } from 'src/modules/requisition-states/entity/requisition-state.entity'
+
 import { User } from 'src/modules/user/entities/user.entity'
+
+import {
+  VacancyRequestType,
+  VacancyRequestTypeStatus,
+} from 'src/modules/vacancy-request-type/entity/vacancy-request-type.entity'
+
 import { PaginatedResponseDto } from 'src/commons/dto/pagination-response.dto'
 import { RequisitionResponseDto } from '../dto/requisition-response.dto'
+
 import {
   toRequisitionResponseDto,
   toRequisitionResponseDtoList,
 } from './requisitions.mapper'
+
 import { CreateRequisitionDto } from '../dto/create-requisition.dto'
 import { UpdateRequisitionDto } from '../dto/update-requisition.dto'
 import { ListRequisitionsQueryDto } from '../dto/list-requisitions-query.dto'
 import { CancelRequisitionDto } from '../dto/cancel-requisition.dto'
 import { AnalyzeRequisitionRhDto } from '../dto/analyze-requisition-rh.dto'
+
 import {
   AnalyzeRequisitionFinancialDto,
   BudgetAvailability,
   FinancialDecision,
 } from '../dto/analyze-requisition-financial.dto'
+
 import {
   MAX_CODE_GENERATION_ATTEMPTS,
   REQUISITION_HISTORY_ACTION,
@@ -58,18 +72,28 @@ export class RequisitionsService {
   constructor(
     @InjectRepository(Requisition)
     private readonly gpRequisitionRepository: Repository<Requisition>,
+
     @InjectRepository(RequisitionHistory)
     private readonly gpRequisitionHistoryRepository: Repository<RequisitionHistory>,
+
     @InjectRepository(Department)
     private readonly gpDepartmentRepository: Repository<Department>,
+
     @InjectRepository(CostCenter)
     private readonly gpCostCenterRepository: Repository<CostCenter>,
+
     @InjectRepository(Position)
     private readonly gpPositionRepository: Repository<Position>,
+
     @InjectRepository(HiringType)
     private readonly gpHiringTypeRepository: Repository<HiringType>,
+
+    @InjectRepository(VacancyRequestType)
+    private readonly gpVacancyRequestTypeRepository: Repository<VacancyRequestType>,
+
     @InjectRepository(RequisitionState)
     private readonly gpRequisitionStateRepository: Repository<RequisitionState>,
+
     @InjectRepository(User)
     private readonly gpUserRepository: Repository<User>,
   ) {}
@@ -81,23 +105,31 @@ export class RequisitionsService {
     const requesterId = authenticatedUserId
 
     const user = await this.validateActiveUser(requesterId, 'solicitante')
+
     const department = this.assertUserBelongsToDepartment(
       user,
       dto.departmentId,
     )
+
     if (department.status !== 1) {
       throw new BadRequestException(
-        `Departamento ${department.description} está inativo`,
+        `O departamento "${department.description}" está inativo`,
       )
     }
+
     const costCenter = await this.findActiveCostCenter(dto.costCenterId)
+
     if (costCenter.departmentId !== department.code) {
       throw new BadRequestException(
-        `O centro de custo ${dto.costCenterId} não está vinculado ao departamento ${dto.departmentId}`,
+        `O centro de custo "${costCenter.description}" não está vinculado ao departamento "${department.description}"`,
       )
     }
+
     await this.findActivePosition(dto.positionId)
+
     await this.findActiveHiringType(dto.hiringTypeId)
+
+    await this.findActiveVacancyRequestType(dto.vacancyRequestTypeId)
 
     const draftState = await this.findStateByAcronym(RequisitionStateCode.DRAFT)
 
@@ -108,6 +140,7 @@ export class RequisitionsService {
       quantity: dto.quantity,
       justification: dto.justification,
       hiringTypeId: dto.hiringTypeId,
+      vacancyRequestTypeId: dto.vacancyRequestTypeId,
       requesterId,
       stateId: draftState.code,
     })
@@ -134,6 +167,7 @@ export class RequisitionsService {
       costCenterId,
       positionId,
       hiringTypeId,
+      vacancyRequestTypeId,
       stateId,
       startDate,
       endDate,
@@ -144,16 +178,63 @@ export class RequisitionsService {
 
     const where: FindOptionsWhere<Requisition> = {
       deletedAt: IsNull(),
-      ...(search ? { requisitionCode: ILike(`%${search}%`) } : {}),
-      ...(requesterName
-        ? { requester: { name: ILike(`%${requesterName}%`) } }
+
+      ...(search
+        ? {
+            requisitionCode: ILike(`%${search}%`),
+          }
         : {}),
-      ...(requesterId !== undefined ? { requesterId } : {}),
-      ...(departmentId !== undefined ? { departmentId } : {}),
-      ...(costCenterId !== undefined ? { costCenterId } : {}),
-      ...(positionId !== undefined ? { positionId } : {}),
-      ...(hiringTypeId !== undefined ? { hiringTypeId } : {}),
-      ...(stateId !== undefined ? { stateId } : {}),
+
+      ...(requesterName
+        ? {
+            requester: {
+              name: ILike(`%${requesterName}%`),
+            },
+          }
+        : {}),
+
+      ...(requesterId !== undefined
+        ? {
+            requesterId,
+          }
+        : {}),
+
+      ...(departmentId !== undefined
+        ? {
+            departmentId,
+          }
+        : {}),
+
+      ...(costCenterId !== undefined
+        ? {
+            costCenterId,
+          }
+        : {}),
+
+      ...(positionId !== undefined
+        ? {
+            positionId,
+          }
+        : {}),
+
+      ...(hiringTypeId !== undefined
+        ? {
+            hiringTypeId,
+          }
+        : {}),
+
+      ...(vacancyRequestTypeId !== undefined
+        ? {
+            vacancyRequestTypeId,
+          }
+        : {}),
+
+      ...(stateId !== undefined
+        ? {
+            stateId,
+          }
+        : {}),
+
       ...(startDate && endDate
         ? {
             createdAt: Between(
@@ -167,7 +248,9 @@ export class RequisitionsService {
     const [data, total] = await this.gpRequisitionRepository.findAndCount({
       where,
       relations: REQUISITION_RELATIONS,
-      order: { code: 'DESC' },
+      order: {
+        code: 'DESC',
+      },
       skip: offset,
       take: limit,
     })
@@ -184,21 +267,34 @@ export class RequisitionsService {
     requisitionCode: string,
   ): Promise<RequisitionResponseDto> {
     const requisition = await this.gpRequisitionRepository.findOne({
-      where: { requisitionCode, deletedAt: IsNull() },
+      where: {
+        requisitionCode,
+        deletedAt: IsNull(),
+      },
+
       relations: {
         ...REQUISITION_RELATIONS,
+
         history: {
           state: true,
           responsible: true,
         },
       },
-      order: { history: { date: 'ASC', code: 'ASC' } },
+
+      order: {
+        history: {
+          date: 'ASC',
+          code: 'ASC',
+        },
+      },
     })
+
     if (!requisition) {
       throw new NotFoundException(
-        `Requisição com o código ${requisitionCode} não encontrada`,
+        `Requisição "${requisitionCode}" não encontrada`,
       )
     }
+
     return toRequisitionResponseDto(requisition)
   }
 
@@ -206,14 +302,20 @@ export class RequisitionsService {
     requisitionCode: string,
   ): Promise<Requisition> {
     const requisition = await this.gpRequisitionRepository.findOne({
-      where: { requisitionCode, deletedAt: IsNull() },
+      where: {
+        requisitionCode,
+        deletedAt: IsNull(),
+      },
+
       relations: REQUISITION_RELATIONS,
     })
+
     if (!requisition) {
       throw new NotFoundException(
-        `Requisição com o código ${requisitionCode} não encontrada`,
+        `Requisição "${requisitionCode}" não encontrada`,
       )
     }
+
     return requisition
   }
 
@@ -222,41 +324,66 @@ export class RequisitionsService {
     dto: UpdateRequisitionDto,
   ): Promise<RequisitionResponseDto> {
     const requisition = await this.findEntityByCode(requisitionCode)
+
     this.assertState(
       requisition,
       [RequisitionStateCode.DRAFT],
       'Uma requisição enviada ou concluída não pode ser alterada',
     )
 
-    if (dto.departmentId && dto.costCenterId) {
+    if (dto.departmentId !== undefined && dto.costCenterId !== undefined) {
       const department = await this.findActiveDepartment(dto.departmentId)
+
       const costCenter = await this.findActiveCostCenter(dto.costCenterId)
+
       if (costCenter.departmentId !== department.code) {
         throw new BadRequestException(
-          `O centro de custo ${dto.costCenterId} não está vinculado ao departamento ${dto.departmentId}`,
+          `O centro de custo "${costCenter.description}" não está vinculado ao departamento "${department.description}"`,
         )
       }
     }
-    if (dto.positionId) {
+
+    if (dto.departmentId !== undefined && dto.costCenterId === undefined) {
+      await this.findActiveDepartment(dto.departmentId)
+    }
+
+    if (dto.costCenterId !== undefined && dto.departmentId === undefined) {
+      await this.findActiveCostCenter(dto.costCenterId)
+    }
+
+    if (dto.positionId !== undefined) {
       await this.findActivePosition(dto.positionId)
     }
-    if (dto.hiringTypeId) {
+
+    if (dto.hiringTypeId !== undefined) {
       await this.findActiveHiringType(dto.hiringTypeId)
     }
 
-    Object.assign(requisition, dto, { updatedAt: new Date() })
+    if (dto.vacancyRequestTypeId !== undefined) {
+      await this.findActiveVacancyRequestType(dto.vacancyRequestTypeId)
+    }
+
+    Object.assign(requisition, dto, {
+      updatedAt: new Date(),
+    })
+
     const saved = await this.gpRequisitionRepository.save(requisition)
+
     return toRequisitionResponseDto(saved)
   }
 
   async remove(requisitionCode: string): Promise<void> {
     const requisition = await this.findEntityByCode(requisitionCode)
+
     this.assertState(
       requisition,
       [RequisitionStateCode.DRAFT],
       'Depois de enviada, a requisição não pode ser excluída',
     )
-    await this.gpRequisitionRepository.softDelete({ code: requisition.code })
+
+    await this.gpRequisitionRepository.softDelete({
+      code: requisition.code,
+    })
   }
 
   async send(
@@ -264,6 +391,7 @@ export class RequisitionsService {
     authenticatedUserId: number,
   ): Promise<RequisitionResponseDto> {
     const requisition = await this.findEntityByCode(requisitionCode)
+
     this.assertState(
       requisition,
       [RequisitionStateCode.DRAFT],
@@ -275,7 +403,9 @@ export class RequisitionsService {
     )
 
     await this.gpRequisitionRepository.update(
-      { code: requisition.code },
+      {
+        code: requisition.code,
+      },
       {
         stateId: awaitingRhState.code,
         sentAt: new Date(),
@@ -307,6 +437,7 @@ export class RequisitionsService {
     }
 
     const requisition = await this.findEntityByCode(requisitionCode)
+
     this.assertState(
       requisition,
       [
@@ -322,7 +453,9 @@ export class RequisitionsService {
     )
 
     await this.gpRequisitionRepository.update(
-      { code: requisition.code },
+      {
+        code: requisition.code,
+      },
       {
         stateId: cancelledState.code,
         updatedAt: new Date(),
@@ -346,6 +479,7 @@ export class RequisitionsService {
     authenticatedUserId: number,
   ): Promise<RequisitionResponseDto> {
     const requisition = await this.findEntityByCode(requisitionCode)
+
     this.assertState(
       requisition,
       [RequisitionStateCode.AWAITING_RH],
@@ -361,9 +495,9 @@ export class RequisitionsService {
     if (dto.decision === RhDecision.APPROVE) {
       try {
         await this.findActivePosition(requisition.positionId)
-      } catch (error) {
+      } catch {
         throw new BadRequestException(
-          `Não é possível encaminhar ao Financeiro: o cargo vinculado a esta requisição está inativo ou não foi encontrado. Regularize o cargo antes de aprovar.`,
+          'Não é possível encaminhar ao Financeiro porque o cargo vinculado à requisição está inativo ou não foi encontrado. Regularize o cargo antes de aprovar.',
         )
       }
     }
@@ -376,7 +510,9 @@ export class RequisitionsService {
     const targetState = await this.findStateByAcronym(targetStateDescription)
 
     await this.gpRequisitionRepository.update(
-      { code: requisition.code },
+      {
+        code: requisition.code,
+      },
       {
         stateId: targetState.code,
         updatedAt: new Date(),
@@ -402,6 +538,7 @@ export class RequisitionsService {
     authenticatedUserId: number,
   ): Promise<RequisitionResponseDto> {
     const requisition = await this.findEntityByCode(requisitionCode)
+
     this.assertState(
       requisition,
       [RequisitionStateCode.AWAITING_FINANCIAL],
@@ -414,7 +551,9 @@ export class RequisitionsService {
     const targetState = await this.findStateByAcronym(targetStateDescription)
 
     await this.gpRequisitionRepository.update(
-      { code: requisition.code },
+      {
+        code: requisition.code,
+      },
       {
         stateId: targetState.code,
         authorizedQuantity,
@@ -463,6 +602,7 @@ export class RequisitionsService {
         'Justificativa obrigatória para rejeitar a requisição',
       )
     }
+
     return {
       targetStateDescription: RequisitionStateCode.REJECTED,
       authorizedQuantity: null,
@@ -480,11 +620,13 @@ export class RequisitionsService {
         'Quantidade autorizada obrigatória na aprovação parcial',
       )
     }
+
     if (dto.authorizedQuantity > requisition.quantity) {
       throw new BadRequestException(
         'A quantidade autorizada não pode ser superior à quantidade solicitada',
       )
     }
+
     if (dto.authorizedQuantity >= requisition.quantity) {
       throw new BadRequestException(
         'Na aprovação parcial, a quantidade autorizada deve ser menor que a quantidade solicitada',
@@ -549,6 +691,7 @@ export class RequisitionsService {
       observation: entry.observation ?? null,
       responsibleId: entry.responsibleId,
     })
+
     await this.gpRequisitionHistoryRepository.save(history)
   }
 
@@ -557,6 +700,7 @@ export class RequisitionsService {
   ): Promise<Requisition> {
     for (let attempt = 1; attempt <= MAX_CODE_GENERATION_ATTEMPTS; attempt++) {
       const requisitionCode = await this.generateRequisitionCode()
+
       const requisition = this.gpRequisitionRepository.create({
         ...data,
         requisitionCode,
@@ -572,7 +716,7 @@ export class RequisitionsService {
     }
 
     throw new ConflictException(
-      'Não foi possível gerar um código único para a requisição, tente novamente',
+      'Não foi possível gerar um código único para a requisição. Tente novamente.',
     )
   }
 
@@ -583,10 +727,15 @@ export class RequisitionsService {
 
     const driverError = (
       error as QueryFailedError & {
-        driverError?: { message?: string; code?: string }
+        driverError?: {
+          message?: string
+          code?: string
+        }
       }
     ).driverError
+
     const message = driverError?.message ?? error.message
+
     return (
       driverError?.code === 'ORA-00001' ||
       message?.includes('ORA-00001') ||
@@ -596,10 +745,15 @@ export class RequisitionsService {
 
   private async generateRequisitionCode(): Promise<string> {
     const year = new Date().getFullYear()
+
     const start = new Date(year, 0, 1)
+
     const end = new Date(year, 11, 31, 23, 59, 59)
+
     const count = await this.gpRequisitionRepository.count({
-      where: { createdAt: Between(start, end) },
+      where: {
+        createdAt: Between(start, end),
+      },
     })
 
     return `REQ-${year}-${String(count + 1).padStart(6, '0')}`
@@ -607,13 +761,17 @@ export class RequisitionsService {
 
   private async findStateByAcronym(acronym: string): Promise<RequisitionState> {
     const state = await this.gpRequisitionStateRepository.findOne({
-      where: { acronym },
+      where: {
+        acronym,
+      },
     })
+
     if (!state) {
       throw new ConflictException(
-        `Estado de requisição '${acronym}' não configurado`,
+        `O estado de requisição "${acronym}" não está configurado`,
       )
     }
+
     return state
   }
 
@@ -635,26 +793,35 @@ export class RequisitionsService {
     role: string,
   ): Promise<User> {
     const user = await this.gpUserRepository.findOne({
-      relations: { groups: { department: true } },
-      where: { id: userId },
+      relations: {
+        groups: {
+          department: true,
+        },
+      },
+      where: {
+        id: userId,
+      },
     })
+
     if (!user) {
-      throw new NotFoundException(
-        `Usuário ${role} com o código ${userId} não encontrado`,
-      )
+      throw new NotFoundException(`Usuário ${role} não encontrado`)
     }
+
     if (user.status !== 1) {
-      throw new BadRequestException(
-        `O usuário ${role} com o código ${userId} está inativo`,
-      )
+      throw new BadRequestException(`O usuário ${role} está inativo`)
     }
+
     return user
   }
 
-  private assertUserBelongsToDepartment(user: User, departmentId: number) {
+  private assertUserBelongsToDepartment(
+    user: User,
+    departmentId: number,
+  ): Department {
     const group = user.groups.find(
       (group) => group.departmentId === departmentId,
     )
+
     if (!group) {
       throw new ForbiddenException(
         'Não podes fazer uma solicitação para um departamento ao qual não pertences.',
@@ -668,18 +835,24 @@ export class RequisitionsService {
     departmentId: number,
   ): Promise<Department> {
     const department = await this.gpDepartmentRepository.findOne({
-      where: { code: departmentId, deletedAt: IsNull() },
+      where: {
+        code: departmentId,
+        deletedAt: IsNull(),
+      },
     })
+
     if (!department) {
       throw new NotFoundException(
-        `Departamento com o código ${departmentId} não encontrado`,
+        'O departamento selecionado não foi encontrado',
       )
     }
+
     if (department.status !== 1) {
       throw new BadRequestException(
-        `Departamento com o código ${departmentId} está inativo`,
+        `O departamento "${department.description}" está inativo`,
       )
     }
+
     return department
   }
 
@@ -687,35 +860,45 @@ export class RequisitionsService {
     costCenterId: number,
   ): Promise<CostCenter> {
     const costCenter = await this.gpCostCenterRepository.findOne({
-      where: { code: costCenterId, deletedAt: IsNull() },
+      where: {
+        code: costCenterId,
+        deletedAt: IsNull(),
+      },
     })
+
     if (!costCenter) {
       throw new NotFoundException(
-        `Centro de custo com o código ${costCenterId} não encontrado`,
+        'O centro de custo selecionado não foi encontrado',
       )
     }
+
     if (costCenter.status !== 1) {
       throw new BadRequestException(
-        `Centro de custo com o código ${costCenterId} está inativo`,
+        `O centro de custo "${costCenter.description}" está inativo`,
       )
     }
+
     return costCenter
   }
 
   private async findActivePosition(positionId: number): Promise<Position> {
     const position = await this.gpPositionRepository.findOne({
-      where: { code: positionId, deletedAt: IsNull() },
+      where: {
+        code: positionId,
+        deletedAt: IsNull(),
+      },
     })
+
     if (!position) {
-      throw new NotFoundException(
-        `Cargo com o código ${positionId} não encontrado`,
-      )
+      throw new NotFoundException('O cargo selecionado não foi encontrado')
     }
+
     if (position.status !== 1) {
       throw new BadRequestException(
-        `Cargo com o código ${positionId} está inativo`,
+        `O cargo "${position.description}" está inativo`,
       )
     }
+
     return position
   }
 
@@ -723,18 +906,50 @@ export class RequisitionsService {
     hiringTypeId: number,
   ): Promise<HiringType> {
     const hiringType = await this.gpHiringTypeRepository.findOne({
-      where: { code: hiringTypeId, deletedAt: IsNull() },
+      where: {
+        code: hiringTypeId,
+        deletedAt: IsNull(),
+      },
     })
+
     if (!hiringType) {
       throw new NotFoundException(
-        `Tipo de contratação com o código ${hiringTypeId} não encontrado`,
+        'O tipo de contratação selecionado não foi encontrado',
       )
     }
+
     if (hiringType.status !== 1) {
       throw new BadRequestException(
-        `Tipo de contratação com o código ${hiringTypeId} está inativo`,
+        `O tipo de contratação "${hiringType.description}" está inativo`,
       )
     }
+
     return hiringType
+  }
+
+  private async findActiveVacancyRequestType(
+    vacancyRequestTypeId: number,
+  ): Promise<VacancyRequestType> {
+    const vacancyRequestType =
+      await this.gpVacancyRequestTypeRepository.findOne({
+        where: {
+          id: vacancyRequestTypeId,
+          deletedAt: IsNull(),
+        },
+      })
+
+    if (!vacancyRequestType) {
+      throw new NotFoundException(
+        'O tipo de requisição de vaga selecionado não foi encontrado',
+      )
+    }
+
+    if (vacancyRequestType.status !== VacancyRequestTypeStatus.ACTIVE) {
+      throw new BadRequestException(
+        `O tipo de requisição de vaga "${vacancyRequestType.description}" está inativo`,
+      )
+    }
+
+    return vacancyRequestType
   }
 }

@@ -89,4 +89,12 @@ export class ListRequisitionsQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsDateString()
   endDate?: string
+  @ApiPropertyOptional({
+    description: 'Filtrar por estado da requisição',
+    example: 2,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  vacancyRequestTypeId?: number
 }
