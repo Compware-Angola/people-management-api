@@ -18,7 +18,7 @@ import {
 } from './entities/salary-employee.entity'
 import { CreateSalaryEmployeeDto } from './dto/salary-employee.dto'
 import { Rubric } from './entities/rubric.entity'
-import { CreateRubricDto } from './dto/rubric.dto'
+import { CreateRubricDto, RubricQueryDto } from './dto/rubric.dto'
 import { SalaryRubric } from './entities/salary-rubric.entity'
 import { CreateSalaryRubricDto } from './dto/salary-rubric.dto'
 import { Employee } from '../employee/entities/employee.entity'
@@ -211,6 +211,49 @@ export class SalaryService {
   async createRubric(createRubricDto: CreateRubricDto): Promise<Rubric> {
     const rubric = this.rubricRepository.create(createRubricDto)
     return this.rubricRepository.save(rubric)
+  }
+
+  async findAllRubrics(query: RubricQueryDto) {
+    const page = query.page ?? 1
+    const limit = query.limit ?? 10
+    const skip = (page - 1) * limit
+
+    const where: FindOptionsWhere<Rubric> = {}
+
+    if (query.search) {
+      where.description = Raw((alias) => `UPPER(${alias}) LIKE UPPER(:value)`, {
+        value: `%${query.search}%`,
+      })
+    }
+
+    if (query.type) {
+      where.type = query.type
+    }
+
+    if (query.valueType) {
+      where.valueType = query.valueType
+    }
+
+    if (query.status !== undefined) {
+      where.status = query.status
+    }
+
+    const [data, total] = await this.rubricRepository.findAndCount({
+      where,
+      order: { code: 'DESC' },
+      skip,
+      take: limit,
+    })
+
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    }
   }
 
   async associateRubricToStructure(
