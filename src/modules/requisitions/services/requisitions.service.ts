@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   BadRequestException,
   ConflictException,
@@ -331,41 +332,62 @@ export class RequisitionsService {
       'Uma requisição enviada ou concluída não pode ser alterada',
     )
 
-    if (dto.departmentId !== undefined && dto.costCenterId !== undefined) {
+    if (dto.departmentId !== undefined) {
       const department = await this.findActiveDepartment(dto.departmentId)
 
+      requisition.department = department
+      requisition.departmentId = department.code
+    }
+
+    if (dto.costCenterId !== undefined) {
       const costCenter = await this.findActiveCostCenter(dto.costCenterId)
 
-      if (costCenter.departmentId !== department.code) {
-        throw new BadRequestException(
-          `O centro de custo "${costCenter.description}" não está vinculado ao departamento "${department.description}"`,
-        )
-      }
+      requisition.costCenter = costCenter
+      requisition.costCenterId = costCenter.code
     }
 
-    if (dto.departmentId !== undefined && dto.costCenterId === undefined) {
-      await this.findActiveDepartment(dto.departmentId)
-    }
-
-    if (dto.costCenterId !== undefined && dto.departmentId === undefined) {
-      await this.findActiveCostCenter(dto.costCenterId)
+    if (
+      requisition.department &&
+      requisition.costCenter &&
+      requisition.costCenter.departmentId !== requisition.department.code
+    ) {
+      throw new BadRequestException(
+        `O centro de custo "${requisition.costCenter.description}" não está vinculado ao departamento "${requisition.department.description}"`,
+      )
     }
 
     if (dto.positionId !== undefined) {
-      await this.findActivePosition(dto.positionId)
+      const position = await this.findActivePosition(dto.positionId)
+
+      requisition.position = position
+      requisition.positionId = position.code
     }
 
     if (dto.hiringTypeId !== undefined) {
-      await this.findActiveHiringType(dto.hiringTypeId)
+      const hiringType = await this.findActiveHiringType(dto.hiringTypeId)
+
+      requisition.hiringType = hiringType
+      requisition.hiringTypeId = hiringType.code
     }
 
     if (dto.vacancyRequestTypeId !== undefined) {
-      await this.findActiveVacancyRequestType(dto.vacancyRequestTypeId)
+      const vacancyRequestType = await this.findActiveVacancyRequestType(
+        dto.vacancyRequestTypeId,
+      )
+
+      requisition.vacancyRequestType = vacancyRequestType
+      requisition.vacancyRequestTypeId = vacancyRequestType.id
     }
 
-    Object.assign(requisition, dto, {
-      updatedAt: new Date(),
-    })
+    if (dto.quantity !== undefined) {
+      requisition.quantity = dto.quantity
+    }
+
+    if (dto.justification !== undefined) {
+      requisition.justification = dto.justification
+    }
+
+    requisition.updatedAt = new Date()
 
     const saved = await this.gpRequisitionRepository.save(requisition)
 
