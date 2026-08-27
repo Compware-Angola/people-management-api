@@ -23,6 +23,7 @@ import {
 } from './dto/salary.dto'
 import { CreateSalaryEmployeeDto } from './dto/salary-employee.dto'
 import { CreateRubricDto } from './dto/rubric.dto'
+import { RubricQueryDto } from './dto/rubric.dto'
 import { CreateSalaryRubricDto } from './dto/salary-rubric.dto'
 
 @ApiTags('Salários')
@@ -93,6 +94,13 @@ export class SalaryController {
   })
   findSalaryStructureWithRubrics(@Param('id', ParseIntPipe) id: number) {
     return this.service.findSalaryStructureWithRubrics(id)
+  }
+
+  @Get('rubrics')
+  @Permissions('read:salaries')
+  @ApiOperation({ summary: 'Listar rubricas com filtros' })
+  findAllRubrics(@Query() query: RubricQueryDto) {
+    return this.service.findAllRubrics(query)
   }
 
   @Post('rubrics')
