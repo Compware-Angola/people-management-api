@@ -26,6 +26,7 @@ import { UploadVacancyDocumentDto } from '../dto/upload-vacancy-document.dto'
 import { RemoteJwtAuthGuard } from 'src/commons/guards/remote-jwt-auth.guard'
 import { PermissionsGuard } from 'src/commons/guards/permissions.guard'
 import { Permissions } from 'src/commons/decorators/permissions.decorator'
+import { PermissionsEnum } from 'src/commons/enums/permissions.enum'
 
 @ApiTags('Vacancies')
 @ApiBearerAuth()
@@ -35,7 +36,7 @@ export class VacanciesController {
   constructor(private readonly vacanciesService: VacanciesService) {}
 
   @Post()
-  @Permissions('write:vacancies')
+  @Permissions(PermissionsEnum.WRITE_VACANCIES)
   @ApiOperation({
     summary: 'Cadastrar uma vaga a partir de uma requisição aprovada',
   })
@@ -49,7 +50,7 @@ export class VacanciesController {
   }
 
   @Get()
-  @Permissions('read:vacancies')
+  @Permissions(PermissionsEnum.READ_VACANCIES)
   @ApiOperation({
     summary: 'Listar vagas (com paginação, busca pelo código e filtros)',
   })
@@ -63,7 +64,7 @@ export class VacanciesController {
   }
 
   @Get(':code')
-  @Permissions('read:vacancies')
+  @Permissions(PermissionsEnum.READ_VACANCIES)
   @ApiOperation({ summary: 'Buscar uma vaga pelo código' })
   @ApiParam({
     name: 'code',
@@ -81,7 +82,7 @@ export class VacanciesController {
   }
 
   @Patch(':code')
-  @Permissions('write:vacancies')
+  @Permissions(PermissionsEnum.WRITE_VACANCIES)
   @ApiOperation({ summary: 'Editar uma vaga (apenas antes da publicação)' })
   @ApiParam({
     name: 'code',
@@ -103,7 +104,7 @@ export class VacanciesController {
   }
 
   @Post(':code/documents')
-  @Permissions('write:vacancies')
+  @Permissions(PermissionsEnum.WRITE_VACANCIES)
   @ApiOperation({
     summary:
       'Registar documento da vaga (ex.: Edital de Contratação) a partir de um ficheiro já enviado ao storage',
@@ -132,7 +133,7 @@ export class VacanciesController {
   }
 
   @Post(':code/publish')
-  @Permissions('write:vacancies')
+  @Permissions(PermissionsEnum.WRITE_VACANCIES)
   @ApiOperation({
     summary:
       'Publicar a vaga imediatamente ou agendar para a data de publicação definida',
@@ -152,7 +153,7 @@ export class VacanciesController {
   }
 
   @Post(':code/suspend')
-  @Permissions('write:vacancies')
+  @Permissions(PermissionsEnum.WRITE_VACANCIES)
   @ApiOperation({ summary: 'Suspender uma vaga publicada (com justificativa)' })
   @ApiParam({
     name: 'code',
@@ -173,7 +174,7 @@ export class VacanciesController {
   }
 
   @Post(':code/reactivate')
-  @Permissions('write:vacancies')
+  @Permissions(PermissionsEnum.WRITE_VACANCIES)
   @ApiOperation({ summary: 'Reativar uma vaga suspensa' })
   @ApiParam({
     name: 'code',
@@ -190,7 +191,7 @@ export class VacanciesController {
   }
 
   @Post(':code/close')
-  @Permissions('write:vacancies')
+  @Permissions(PermissionsEnum.WRITE_VACANCIES)
   @ApiOperation({ summary: 'Encerrar uma vaga (com justificativa)' })
   @ApiParam({
     name: 'code',
@@ -211,7 +212,7 @@ export class VacanciesController {
   }
 
   @Post(':code/cancel')
-  @Permissions('write:vacancies')
+  @Permissions(PermissionsEnum.WRITE_VACANCIES)
   @ApiOperation({ summary: 'Cancelar uma vaga (com justificativa)' })
   @ApiParam({
     name: 'code',

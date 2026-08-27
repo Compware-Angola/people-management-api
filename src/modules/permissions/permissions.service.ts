@@ -183,6 +183,25 @@ export class PermissionsService {
     return this.userRepository.save(user)
   }
 
+  async findUserDirectPermissions(userId: number): Promise<Permission[]> {
+    if (isNaN(userId)) {
+      throw new BadRequestException('ID de usuário inválido')
+    }
+
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: {
+        permissions: true,
+      },
+    })
+
+    if (!user) {
+      throw new NotFoundException(`Usuário com ID ${userId} não encontrado`)
+    }
+
+    return user.permissions
+  }
+
   async findUserGroups(userId: number): Promise<Group[]> {
     if (isNaN(userId)) {
       throw new BadRequestException('ID de usuário inválido')
@@ -233,6 +252,66 @@ export class PermissionsService {
     }
     userPermission.status = updateStatusDto.status
     return this.userPermissionRepository.save(userPermission)
+  }
+
+  async myPermissions(userId: number): Promise<Permission[]> {
+    if (isNaN(userId)) {
+      throw new BadRequestException('ID de usuário inválido')
+    }
+
+    const sql = `
+    WITH PERMISSOES_ORIGEM AS (
+      SELECT
+        up.CODIGO_PERMISSAO,
+        up.ESTADO,
+        1 AS PRIORIDADE
+      FROM GP_USUARIOS_PERMISSOES up
+      WHERE up.CODIGO_USUARIO = :userId
+
+      UNION ALL
+
+      SELECT
+        gp.CODIGO_PERMISSAO,
+        1 AS ESTADO,
+        2 AS PRIORIDADE
+      FROM GP_GRUPOS_USUARIOS gu
+      INNER JOIN GP_GRUPOS g
+        ON g.CODIGO = gu.CODIGO_GRUPO
+       AND g.ESTADO = 1
+      INNER JOIN GP_GRUPOS_PERMISSOES gp
+        ON gp.CODIGO_GRUPO = gu.CODIGO_GRUPO
+       AND gp.ESTADO = 1
+      WHERE gu.CODIGO_USUARIO = :userId
+        AND gu.ESTADO = 1
+    ),
+
+    PERMISSOES_PRIORIZADAS AS (
+      SELECT
+        CODIGO_PERMISSAO,
+        ESTADO,
+        ROW_NUMBER() OVER (
+          PARTITION BY CODIGO_PERMISSAO
+          ORDER BY PRIORIDADE
+        ) AS RN
+      FROM PERMISSOES_ORIGEM
+    )
+
+    SELECT
+      p.CODIGO AS "id",
+      p.SLUG AS "slug",
+      p.DESCRICAO AS "description"
+    FROM PERMISSOES_PRIORIZADAS pp
+    INNER JOIN GP_PERMISSOES p
+      ON p.CODIGO = pp.CODIGO_PERMISSAO
+     AND p.ESTADO = 1
+    WHERE pp.RN = 1
+      AND pp.ESTADO = 1
+    ORDER BY p.DESCRICAO
+  `
+
+    return this.permissionRepository.query(sql, {
+      userId,
+    })
   }
 
   private async validateDepartment(departmentId?: number): Promise<void> {

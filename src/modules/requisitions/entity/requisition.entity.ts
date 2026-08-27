@@ -15,6 +15,7 @@ import { HiringType } from 'src/modules/hiring-types/entity/hiring-type.entity'
 import { RequisitionState } from 'src/modules/requisition-states/entity/requisition-state.entity'
 import { User } from 'src/modules/user/entities/user.entity'
 import { RequisitionHistory } from './requisition-history.entity'
+import { VacancyRequestType } from 'src/modules/vacancy-request-type/entity/vacancy-request-type.entity'
 
 @Entity('GP_REQUISICOES_VAGA')
 @Unique('UQ_GP_REQUISICOES_VAGA_CODIGO', ['requisitionCode'])
@@ -23,7 +24,7 @@ export class Requisition {
     name: 'CODIGO',
     type: 'number',
   })
-  code: number
+  declare code: number
 
   @Column({
     name: 'CODIGO_REQUISICAO',
@@ -31,47 +32,47 @@ export class Requisition {
     length: 30,
     nullable: false,
   })
-  requisitionCode: string
+  declare requisitionCode: string
 
   @Column({
     name: 'DEPARTAMENTO_ID',
     type: 'number',
     nullable: false,
   })
-  departmentId: number
+  declare departmentId: number
 
   @ManyToOne(() => Department, { eager: false })
   @JoinColumn({ name: 'DEPARTAMENTO_ID' })
-  department: Department
+  declare department: Department
 
   @Column({
     name: 'CENTRO_CUSTO_ID',
     type: 'number',
     nullable: false,
   })
-  costCenterId: number
+  declare costCenterId: number
 
   @ManyToOne(() => CostCenter, { eager: false })
   @JoinColumn({ name: 'CENTRO_CUSTO_ID' })
-  costCenter: CostCenter
+  declare costCenter: CostCenter
 
   @Column({
     name: 'CARGO_ID',
     type: 'number',
     nullable: false,
   })
-  positionId: number
+  declare positionId: number
 
   @ManyToOne(() => Position, { eager: false })
   @JoinColumn({ name: 'CARGO_ID' })
-  position: Position
+  declare position: Position
 
   @Column({
     name: 'QUANTIDADE',
     type: 'number',
     nullable: false,
   })
-  quantity: number
+  declare quantity: number
 
   @Column({
     name: 'JUSTIFICATIVA',
@@ -79,61 +80,72 @@ export class Requisition {
     length: 2000,
     nullable: false,
   })
-  justification: string
+  declare justification: string
 
   @Column({
     name: 'TIPO_CONTRATACAO_ID',
     type: 'number',
     nullable: false,
   })
-  hiringTypeId: number
+  declare hiringTypeId: number
+
+  @Column({
+    name: 'TIPO_REQUISICAO_VAGA_ID',
+    type: 'number',
+    nullable: false,
+  })
+  declare vacancyRequestTypeId: number
+
+  @ManyToOne(() => VacancyRequestType, { eager: false })
+  @JoinColumn({ name: 'TIPO_REQUISICAO_VAGA_ID' })
+  declare vacancyRequestType: VacancyRequestType
 
   @ManyToOne(() => HiringType, { eager: false })
   @JoinColumn({ name: 'TIPO_CONTRATACAO_ID' })
-  hiringType: HiringType
+  declare hiringType: HiringType
 
   @Column({
     name: 'SOLICITANTE_ID',
     type: 'number',
     nullable: false,
   })
-  requesterId: number
+  declare requesterId: number
 
   @ManyToOne(() => User, { eager: false })
   @JoinColumn({ name: 'SOLICITANTE_ID' })
-  requester: User
+  declare requester: User
 
   @Column({
     name: 'ESTADO_ID',
     type: 'number',
     nullable: false,
   })
-  stateId: number
+  declare stateId: number
 
   @ManyToOne(() => RequisitionState, { eager: false })
   @JoinColumn({ name: 'ESTADO_ID' })
-  state: RequisitionState
+  declare state: RequisitionState
 
   @Column({
     name: 'QUANTIDADE_AUTORIZADA',
     type: 'number',
     nullable: true,
   })
-  authorizedQuantity: number | null
+  declare authorizedQuantity: number | null
 
   @Column({
     name: 'ENVIADA_EM',
     type: 'date',
     nullable: true,
   })
-  sentAt: Date | null
+  declare sentAt: Date | null
 
   @Column({
     name: 'ENVIADO_POR',
     type: 'number',
     nullable: true,
   })
-  sentBy: number | null
+  declare sentBy: number | null
 
   @Column({
     name: 'CRIADO_EM',
@@ -141,21 +153,21 @@ export class Requisition {
     default: () => 'SYSDATE',
     nullable: false,
   })
-  createdAt: Date
+  declare createdAt: Date
 
   @Column({
     name: 'ATUALIZADO_EM',
     type: 'date',
     nullable: true,
   })
-  updatedAt: Date | null
+  declare updatedAt: Date | null
 
   @DeleteDateColumn({
     name: 'DELETADO_EM',
     type: 'date',
   })
-  deletedAt: Date | null
+  declare deletedAt: Date | null
 
   @OneToMany(() => RequisitionHistory, (history) => history.requisition)
-  history: RequisitionHistory[]
+  declare history: RequisitionHistory[]
 }

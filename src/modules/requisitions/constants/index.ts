@@ -11,6 +11,7 @@ export const REQUISITION_RELATIONS = {
   costCenter: true,
   position: true,
   hiringType: true,
+  vacancyRequestType: true,
   requester: true,
   state: true,
 } as const

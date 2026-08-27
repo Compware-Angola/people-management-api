@@ -14,6 +14,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger'
 import { RemoteJwtAuthGuard } from '../../commons/guards/remote-jwt-auth.guard'
 import { PermissionsGuard } from '../../commons/guards/permissions.guard'
 import { Permissions } from '../../commons/decorators/permissions.decorator'
+import { PermissionsEnum } from '../../commons/enums/permissions.enum'
 import { SalaryService } from './salary.service'
 import {
   CreateSalaryDto,
@@ -32,21 +33,21 @@ export class SalaryController {
   constructor(private readonly service: SalaryService) {}
 
   @Post()
-  @Permissions('write:salaries')
+  @Permissions(PermissionsEnum.WRITE_SALARIES)
   @ApiOperation({ summary: 'Registrar salário' })
   create(@Body() create: CreateSalaryDto) {
     return this.service.create(create)
   }
 
   @Get()
-  @Permissions('read:salaries')
+  @Permissions(PermissionsEnum.READ_SALARIES)
   @ApiOperation({ summary: 'Listar salários com filtros' })
   findAll(@Query() query: SalaryQueryDto) {
     return this.service.findAll(query)
   }
 
   @Patch(':id')
-  @Permissions('write:salaries')
+  @Permissions(PermissionsEnum.WRITE_SALARIES)
   @ApiOperation({ summary: 'Atualizar um salário' })
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -56,7 +57,7 @@ export class SalaryController {
   }
 
   @Post('employees')
-  @Permissions('write:salaries')
+  @Permissions(PermissionsEnum.WRITE_SALARIES)
   @ApiOperation({ summary: 'Adicionar colaborador a uma estrutura salarial' })
   saveSalaryToEmployee(
     @Body() createSalaryEmployeeDto: CreateSalaryEmployeeDto,
@@ -70,14 +71,14 @@ export class SalaryController {
   }
 
   @Get('employees/:id')
-  @Permissions('read:salaries')
+  @Permissions(PermissionsEnum.READ_SALARIES)
   @ApiOperation({ summary: 'Buscar a estrutura salarial ativa do colaborador' })
   findSalaryEmployee(@Param('id', ParseIntPipe) id: number) {
     return this.service.findSalaryEmployeeByEmployeeId(id)
   }
 
   @Get('employees/:id/history')
-  @Permissions('read:salaries')
+  @Permissions(PermissionsEnum.READ_SALARIES)
   @ApiOperation({
     summary: 'Listar o histórico de estruturas salariais do colaborador',
   })
@@ -86,7 +87,7 @@ export class SalaryController {
   }
 
   @Get('rubrics/:id')
-  @Permissions('read:salaries')
+  @Permissions(PermissionsEnum.READ_SALARIES)
   @ApiOperation({
     summary: 'Buscar estrutura salarial por código, com as rubricas associadas',
   })
@@ -95,14 +96,14 @@ export class SalaryController {
   }
 
   @Post('rubrics')
-  @Permissions('write:salaries')
+  @Permissions(PermissionsEnum.WRITE_SALARIES)
   @ApiOperation({ summary: 'Criar rubrica' })
   createRubric(@Body() createRubricDto: CreateRubricDto) {
     return this.service.createRubric(createRubricDto)
   }
 
   @Post('rubrics/associate')
-  @Permissions('write:salaries')
+  @Permissions(PermissionsEnum.WRITE_SALARIES)
   @ApiOperation({ summary: 'Associar rubrica a uma estrutura salarial' })
   associateRubricToStructure(
     @Body() createSalaryRubricDto: CreateSalaryRubricDto,

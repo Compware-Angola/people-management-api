@@ -56,6 +56,11 @@ export function toRequisitionResponseDto(
       acronym: requisition.hiringType?.acronym,
       description: requisition.hiringType?.description,
     },
+    vacancyRequestType: {
+      id: requisition.vacancyRequestType?.id,
+      acronym: requisition.vacancyRequestType?.acronym,
+      description: requisition.vacancyRequestType?.description,
+    },
     requester: {
       id: requisition.requester?.id,
       name: requisition.requester?.name,

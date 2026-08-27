@@ -1,10 +1,25 @@
-import { Controller, Get, Param, Query, ParseIntPipe, UseGuards } from '@nestjs/common'
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger'
+import {
+  Controller,
+  Get,
+  Param,
+  Query,
+  ParseIntPipe,
+  UseGuards,
+} from '@nestjs/common'
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiBearerAuth,
+} from '@nestjs/swagger'
 import { RequisitionStatesService } from '../services/requisition-states.service'
 import { RequisitionState } from '../entity/requisition-state.entity'
 import { ListRequisitionStatesQueryDto } from '../dto/list-requisition-states-query.dto'
 import { RemoteJwtAuthGuard } from 'src/commons/guards/remote-jwt-auth.guard'
 import { PermissionsGuard } from 'src/commons/guards/permissions.guard'
+import { Permissions } from 'src/commons/decorators/permissions.decorator'
+import { PermissionsEnum } from 'src/commons/enums/permissions.enum'
 
 @ApiTags('Requisition States')
 @ApiBearerAuth()
@@ -16,6 +31,7 @@ export class RequisitionStatesController {
   ) {}
 
   @Get()
+  @Permissions(PermissionsEnum.READ_REQUISITION_STATES)
   @ApiOperation({
     summary:
       'Listar estados de requisição (seed por regra de negócio; com paginação e busca)',
@@ -30,6 +46,7 @@ export class RequisitionStatesController {
   }
 
   @Get(':code')
+  @Permissions(PermissionsEnum.READ_REQUISITION_STATES)
   @ApiOperation({ summary: 'Buscar um estado de requisição pelo código' })
   @ApiParam({
     name: 'code',

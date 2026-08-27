@@ -30,6 +30,7 @@ import { AnalyzeRequisitionFinancialDto } from '../dto/analyze-requisition-finan
 import { RemoteJwtAuthGuard } from 'src/commons/guards/remote-jwt-auth.guard'
 import { PermissionsGuard } from 'src/commons/guards/permissions.guard'
 import { Permissions } from 'src/commons/decorators/permissions.decorator'
+import { PermissionsEnum } from 'src/commons/enums/permissions.enum'
 
 @ApiTags('Requisitions')
 @ApiBearerAuth()
@@ -39,7 +40,7 @@ export class RequisitionsController {
   constructor(private readonly requisitionsService: RequisitionsService) {}
 
   @Post()
-  @Permissions('write:requisitions')
+  @Permissions(PermissionsEnum.WRITE_REQUISITIONS)
   @ApiOperation({ summary: 'Criar uma nova requisição de vaga' })
   @ApiResponse({
     status: 201,
@@ -53,7 +54,7 @@ export class RequisitionsController {
   }
 
   @Get()
-  @Permissions('read:requisitions')
+  @Permissions(PermissionsEnum.READ_REQUISITIONS)
   @ApiOperation({
     summary:
       'Listar requisições (com paginação, busca pelo código, nome do solicitante e filtros)',
@@ -68,7 +69,7 @@ export class RequisitionsController {
   }
 
   @Get(':code')
-  @Permissions('read:requisitions')
+  @Permissions(PermissionsEnum.READ_REQUISITIONS)
   @ApiOperation({ summary: 'Buscar uma requisição pelo código interno' })
   @ApiParam({
     name: 'code',
@@ -86,7 +87,7 @@ export class RequisitionsController {
   }
 
   @Patch(':code')
-  @Permissions('write:requisitions')
+  @Permissions(PermissionsEnum.WRITE_REQUISITIONS)
   @ApiOperation({
     summary: 'Atualizar uma requisição (apenas em estado Rascunho)',
   })
@@ -106,7 +107,7 @@ export class RequisitionsController {
   }
 
   @Delete(':code')
-  @Permissions('write:requisitions')
+  @Permissions(PermissionsEnum.WRITE_REQUISITIONS)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: 'Remover uma requisição (apenas em estado Rascunho)',
@@ -123,7 +124,7 @@ export class RequisitionsController {
   }
 
   @Post(':code/send')
-  @Permissions('write:requisitions')
+  @Permissions(PermissionsEnum.WRITE_REQUISITIONS)
   @ApiOperation({ summary: 'Enviar a requisição para aprovação' })
   @ApiParam({
     name: 'code',
@@ -140,7 +141,7 @@ export class RequisitionsController {
   }
 
   @Post(':code/cancel')
-  @Permissions('write:requisitions')
+  @Permissions(PermissionsEnum.WRITE_REQUISITIONS)
   @ApiOperation({ summary: 'Cancelar uma requisição (com justificativa)' })
   @ApiParam({
     name: 'code',
@@ -161,7 +162,7 @@ export class RequisitionsController {
   }
 
   @Post(':code/analyze/rh')
-  @Permissions('write:requisitions')
+  @Permissions(PermissionsEnum.WRITE_REQUISITIONS)
   @ApiOperation({ summary: 'Analisar a requisição pelo RH' })
   @ApiParam({
     name: 'code',
@@ -182,7 +183,7 @@ export class RequisitionsController {
   }
 
   @Post(':code/analyze/financial')
-  @Permissions('write:requisitions')
+  @Permissions(PermissionsEnum.WRITE_REQUISITIONS)
   @ApiOperation({
     summary:
       'Analisar a requisição pela Direção Administrativa e Financeira (aprovar, aprovar parcialmente ou rejeitar)',

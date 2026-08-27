@@ -20,6 +20,9 @@ import { VacancyStatesModule } from './modules/vacancy-states/vacancy-states.mod
 import { VacanciesModule } from './modules/vacancies/vacancies.module'
 import { SalaryModule } from './modules/salary/salary.module'
 import { ContractModule } from './modules/contract/contract.module'
+import { CriteriaModule } from './modules/criteria/criteria.module'
+import { CriteriaVacancyModule } from './modules/criteria-vacancy/criteria-vacancy.module'
+import { VacancyRequestTypeModule } from './modules/vacancy-request-type/vacancy-request-type.module'
 
 @Module({
   imports: [
@@ -45,6 +48,9 @@ import { ContractModule } from './modules/contract/contract.module'
     LeavesModule,
     SalaryModule,
     ContractModule,
+    CriteriaModule,
+    CriteriaVacancyModule,
+    VacancyRequestTypeModule,
   ],
 })
 export class AppModule {}

@@ -10,6 +10,7 @@ import { RequisitionState } from 'src/modules/requisition-states/entity/requisit
 import { User } from 'src/modules/user/entities/user.entity'
 import { RequisitionsController } from './controllers/requisitions.controller'
 import { RequisitionsService } from './services/requisitions.service'
+import { VacancyRequestType } from '../vacancy-request-type/entity/vacancy-request-type.entity'
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { RequisitionsService } from './services/requisitions.service'
       HiringType,
       RequisitionState,
       User,
+      VacancyRequestType,
     ]),
   ],
   controllers: [RequisitionsController],

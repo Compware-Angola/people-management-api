@@ -14,6 +14,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger'
 import { RemoteJwtAuthGuard } from '../../commons/guards/remote-jwt-auth.guard'
 import { PermissionsGuard } from '../../commons/guards/permissions.guard'
 import { Permissions } from '../../commons/decorators/permissions.decorator'
+import { PermissionsEnum } from '../../commons/enums/permissions.enum'
 import { SalaryProcessingService } from './salary-processing.service'
 import {
   CreateSalaryProcessingDto,
@@ -29,7 +30,7 @@ export class SalaryProcessingController {
   constructor(private readonly service: SalaryProcessingService) {}
 
   @Post()
-  @Permissions('write:salary-processing')
+  @Permissions(PermissionsEnum.WRITE_SALARY_PROCESSING)
   @ApiOperation({
     summary: 'Processar (simular) a folha salarial de um período',
   })
@@ -39,14 +40,14 @@ export class SalaryProcessingController {
   }
 
   @Get()
-  @Permissions('read:salary-processing')
+  @Permissions(PermissionsEnum.READ_SALARY_PROCESSING)
   @ApiOperation({ summary: 'Listar processamentos salariais com filtros' })
   findAll(@Query() query: SalaryProcessingQueryDto) {
     return this.service.findAll(query)
   }
 
   @Get(':id')
-  @Permissions('read:salary-processing')
+  @Permissions(PermissionsEnum.READ_SALARY_PROCESSING)
   @ApiOperation({
     summary: 'Detalhar um processamento salarial, com totais por colaborador',
   })
@@ -55,7 +56,7 @@ export class SalaryProcessingController {
   }
 
   @Patch(':id/validate')
-  @Permissions('write:salary-processing')
+  @Permissions(PermissionsEnum.WRITE_SALARY_PROCESSING)
   @ApiOperation({
     summary: 'Validar um processamento salarial (fechar ou recusar)',
   })
@@ -69,7 +70,7 @@ export class SalaryProcessingController {
   }
 
   @Post(':id/reprocess')
-  @Permissions('write:salary-processing')
+  @Permissions(PermissionsEnum.WRITE_SALARY_PROCESSING)
   @ApiOperation({
     summary:
       'Cancelar um processamento fechado e gerar um novo para o mesmo período',

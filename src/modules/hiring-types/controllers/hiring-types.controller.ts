@@ -26,6 +26,8 @@ import { ListHiringTypesQueryDto } from '../dto/list-hiring-types-query.dto'
 import { UpdateHiringTypeDto } from '../dto/update-hiring-type.dto'
 import { RemoteJwtAuthGuard } from 'src/commons/guards/remote-jwt-auth.guard'
 import { PermissionsGuard } from 'src/commons/guards/permissions.guard'
+import { Permissions } from 'src/commons/decorators/permissions.decorator'
+import { PermissionsEnum } from 'src/commons/enums/permissions.enum'
 
 @ApiTags('Hiring Types')
 @ApiBearerAuth()
@@ -35,6 +37,7 @@ export class HiringTypesController {
   constructor(private readonly hiringTypesService: HiringTypesService) {}
 
   @Post()
+  @Permissions(PermissionsEnum.WRITE_HIRING_TYPES)
   @ApiOperation({ summary: 'Criar um novo tipo de contratação' })
   @ApiResponse({
     status: 201,
@@ -46,6 +49,7 @@ export class HiringTypesController {
   }
 
   @Get()
+  @Permissions(PermissionsEnum.READ_HIRING_TYPES)
   @ApiOperation({
     summary:
       'Listar tipos de contratação (seed por regra de negócio; com paginação, busca e filtros)',
@@ -60,6 +64,7 @@ export class HiringTypesController {
   }
 
   @Get(':code')
+  @Permissions(PermissionsEnum.READ_HIRING_TYPES)
   @ApiOperation({ summary: 'Buscar um tipo de contratação pelo código' })
   @ApiParam({
     name: 'code',
@@ -80,6 +85,7 @@ export class HiringTypesController {
   }
 
   @Patch(':code')
+  @Permissions(PermissionsEnum.WRITE_HIRING_TYPES)
   @ApiOperation({ summary: 'Atualizar um tipo de contratação' })
   @ApiParam({
     name: 'code',
@@ -103,6 +109,7 @@ export class HiringTypesController {
   }
 
   @Delete(':code')
+  @Permissions(PermissionsEnum.WRITE_HIRING_TYPES)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Remover um tipo de contratação' })
   @ApiParam({

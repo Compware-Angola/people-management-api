@@ -26,6 +26,8 @@ import { ListCostCentersQueryDto } from '../dto/list-cost-centers-query.dto'
 import { UpdateCostCenterDto } from '../dto/update-cost-center.dto'
 import { RemoteJwtAuthGuard } from 'src/commons/guards/remote-jwt-auth.guard'
 import { PermissionsGuard } from 'src/commons/guards/permissions.guard'
+import { Permissions } from 'src/commons/decorators/permissions.decorator'
+import { PermissionsEnum } from 'src/commons/enums/permissions.enum'
 
 @ApiTags('Cost Centers')
 @ApiBearerAuth()
@@ -35,6 +37,7 @@ export class CostCentersController {
   constructor(private readonly costCentersService: CostCentersService) {}
 
   @Post()
+  @Permissions(PermissionsEnum.WRITE_COST_CENTERS)
   @ApiOperation({ summary: 'Criar um novo centro de custo' })
   @ApiResponse({
     status: 201,
@@ -46,6 +49,7 @@ export class CostCentersController {
   }
 
   @Get()
+  @Permissions(PermissionsEnum.READ_COST_CENTERS)
   @ApiOperation({
     summary: 'Listar centros de custo (com paginação, busca e filtros)',
   })
@@ -59,6 +63,7 @@ export class CostCentersController {
   }
 
   @Get(':code')
+  @Permissions(PermissionsEnum.READ_COST_CENTERS)
   @ApiOperation({ summary: 'Buscar um centro de custo pelo código' })
   @ApiParam({
     name: 'code',
@@ -76,6 +81,7 @@ export class CostCentersController {
   }
 
   @Patch(':code')
+  @Permissions(PermissionsEnum.WRITE_COST_CENTERS)
   @ApiOperation({ summary: 'Atualizar um centro de custo' })
   @ApiParam({
     name: 'code',
@@ -96,6 +102,7 @@ export class CostCentersController {
   }
 
   @Delete(':code')
+  @Permissions(PermissionsEnum.WRITE_COST_CENTERS)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Remover um centro de custo' })
   @ApiParam({

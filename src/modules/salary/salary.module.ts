@@ -13,6 +13,7 @@ import { SalaryProcessingService } from './salary-processing.service'
 import { Attendance } from '../attendance/entities/attendance.entity'
 import { ContractModule } from '../contract/contract.module'
 import { AcademicModule } from '../academic/academic.module'
+import { EmployeeModule } from '../employee/employee.module'
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { AcademicModule } from '../academic/academic.module'
     ]),
     ContractModule,
     AcademicModule,
+    EmployeeModule,
   ],
   controllers: [SalaryController, SalaryProcessingController],
   providers: [SalaryService, SalaryProcessingService],

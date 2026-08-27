@@ -1,12 +1,6 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import {
-  IsInt,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  MaxLength,
-  Min,
-} from 'class-validator'
+import { ApiProperty } from '@nestjs/swagger'
+
+import { IsInt, IsNotEmpty, IsString, MaxLength, Min } from 'class-validator'
 
 export class CreateRequisitionDto {
   @ApiProperty({
@@ -15,7 +9,7 @@ export class CreateRequisitionDto {
   })
   @IsInt()
   @IsNotEmpty()
-  departmentId: number
+  declare departmentId: number
 
   @ApiProperty({
     description:
@@ -24,7 +18,7 @@ export class CreateRequisitionDto {
   })
   @IsInt()
   @IsNotEmpty()
-  costCenterId: number
+  declare costCenterId: number
 
   @ApiProperty({
     description: 'Código do cargo (deve estar ativo)',
@@ -32,7 +26,7 @@ export class CreateRequisitionDto {
   })
   @IsInt()
   @IsNotEmpty()
-  positionId: number
+  declare positionId: number
 
   @ApiProperty({
     description: 'Quantidade solicitada (número inteiro maior que zero)',
@@ -41,7 +35,7 @@ export class CreateRequisitionDto {
   @IsInt()
   @IsNotEmpty()
   @Min(1)
-  quantity: number
+  declare quantity: number
 
   @ApiProperty({
     description: 'Justificativa da necessidade da contratação',
@@ -51,7 +45,7 @@ export class CreateRequisitionDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(2000)
-  justification: string
+  declare justification: string
 
   @ApiProperty({
     description: 'Código do tipo de contratação (deve estar ativo)',
@@ -59,5 +53,13 @@ export class CreateRequisitionDto {
   })
   @IsInt()
   @IsNotEmpty()
-  hiringTypeId: number
+  declare hiringTypeId: number
+
+  @ApiProperty({
+    description: 'Código do tipo de requisição de vaga (deve estar ativo)',
+    example: 1,
+  })
+  @IsInt()
+  @IsNotEmpty()
+  declare vacancyRequestTypeId: number
 }
