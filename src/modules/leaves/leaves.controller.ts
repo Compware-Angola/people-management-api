@@ -49,7 +49,7 @@ export class LeavesController {
     @Body() updateLeaveDto: UpdateLeaveDto,
     @Req() req: any,
   ) {
-    const approverId = req.user.sub
-    return this.leavesService.update(id, updateLeaveDto, approverId)
+    const userId = req.user.sub
+    return this.leavesService.update(id, updateLeaveDto, userId)
   }
 }
