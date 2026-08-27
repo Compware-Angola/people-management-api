@@ -10,12 +10,14 @@ import { CreateLeaveDto } from './dto/create-leave.dto'
 import { UpdateLeaveDto, LeaveStatus } from './dto/update-leave.dto'
 import { LeaveQueryDto } from './dto/leave-query.dto'
 import { Leave } from './entities/leave.entity'
+import { EmployeeService } from '../employee/employee.service'
 
 @Injectable()
 export class LeavesService {
   constructor(
     @InjectRepository(Leave)
     private readonly leaveRepository: Repository<Leave>,
+    private readonly employeeService: EmployeeService,
   ) {}
 
   async create(createDto: CreateLeaveDto) {
@@ -84,7 +86,7 @@ export class LeavesService {
     }
   }
 
-  async update(id: number, updateDto: UpdateLeaveDto, approverId: number) {
+  async update(id: number, updateDto: UpdateLeaveDto, userId: number) {
     if (
       (updateDto.status === LeaveStatus.REJECTED ||
         updateDto.status === LeaveStatus.CANCELLED) &&
@@ -101,10 +103,18 @@ export class LeavesService {
       throw new NotFoundException(`Licença com código ${id} não encontrada`)
     }
 
+    const approver = await this.employeeService.findActiveByUserId(userId)
+
+    if (!approver) {
+      throw new BadRequestException(
+        'Usuário autenticado não está associado a um colaborador ativo.',
+      )
+    }
+
     try {
       await this.leaveRepository.update(id, {
         status: updateDto.status,
-        approverId,
+        approverId: approver.id,
         observation: updateDto.observation,
       })
     } catch (error) {

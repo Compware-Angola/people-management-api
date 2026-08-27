@@ -142,6 +142,21 @@ export class EmployeeService {
     return employee
   }
 
+  async findActiveByUserId(userId: number) {
+    const result = await this.dataSource.query(
+      `SELECT C.CODIGO AS "id",
+              C.CODIGO_USUARIO AS "userId",
+              C.ESTADO AS "status"
+         FROM GP_COLABORADORES C
+        WHERE C.CODIGO_USUARIO = :1
+          AND C.ESTADO = 1
+        FETCH NEXT 1 ROWS ONLY`,
+      [userId],
+    )
+
+    return result[0] ?? null
+  }
+
   async findFilesByEmployee(userId: number) {
     return this.dataSource.query(
       `SELECT CODIGO AS "id",
