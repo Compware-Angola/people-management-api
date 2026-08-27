@@ -13,6 +13,7 @@ import { SalaryProcessingService } from './salary-processing.service'
 import { Attendance } from '../attendance/entities/attendance.entity'
 import { ContractModule } from '../contract/contract.module'
 import { AcademicModule } from '../academic/academic.module'
+import { Employee } from '../employee/entities/employee.entity'
 import { EmployeeModule } from '../employee/employee.module'
 
 @Module({
@@ -25,6 +26,7 @@ import { EmployeeModule } from '../employee/employee.module'
       SalaryProcessing,
       SalaryProcessingEmployee,
       Attendance,
+      Employee,
     ]),
     ContractModule,
     AcademicModule,

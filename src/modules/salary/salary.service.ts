@@ -18,9 +18,10 @@ import {
 } from './entities/salary-employee.entity'
 import { CreateSalaryEmployeeDto } from './dto/salary-employee.dto'
 import { Rubric } from './entities/rubric.entity'
-import { CreateRubricDto } from './dto/rubric.dto'
+import { CreateRubricDto, RubricQueryDto } from './dto/rubric.dto'
 import { SalaryRubric } from './entities/salary-rubric.entity'
 import { CreateSalaryRubricDto } from './dto/salary-rubric.dto'
+import { Employee } from '../employee/entities/employee.entity'
 
 @Injectable()
 export class SalaryService {
@@ -36,7 +37,24 @@ export class SalaryService {
 
     @InjectRepository(SalaryRubric)
     private readonly salaryRubricRepository: Repository<SalaryRubric>,
+
+    @InjectRepository(Employee)
+    private readonly employeeRepository: Repository<Employee>,
   ) {}
+
+  private async getActiveEmployeeIdByUserId(userId: number): Promise<number> {
+    const employee = await this.employeeRepository.findOne({
+      where: { userId, status: 1 },
+    })
+
+    if (!employee) {
+      throw new BadRequestException(
+        'Usuário autenticado não está associado a um colaborador ativo',
+      )
+    }
+
+    return employee.id
+  }
 
   async findAll(query: SalaryQueryDto) {
     const page = query.page ?? 1
@@ -95,9 +113,11 @@ export class SalaryService {
 
   async saveSalaryToEmployee(
     createSalaryEmployeeDto: CreateSalaryEmployeeDto,
-    createdByEmployeeId: number,
+    createdByUserId: number,
   ): Promise<SalaryEmployee> {
     const { salaryId, employeeId } = createSalaryEmployeeDto
+    const createdByEmployeeId =
+      await this.getActiveEmployeeIdByUserId(createdByUserId)
 
     const salaryStructure = await this.salaryRepository.findOne({
       where: { id: salaryId },
@@ -193,11 +213,56 @@ export class SalaryService {
     return this.rubricRepository.save(rubric)
   }
 
+  async findAllRubrics(query: RubricQueryDto) {
+    const page = query.page ?? 1
+    const limit = query.limit ?? 10
+    const skip = (page - 1) * limit
+
+    const where: FindOptionsWhere<Rubric> = {}
+
+    if (query.search) {
+      where.description = Raw((alias) => `UPPER(${alias}) LIKE UPPER(:value)`, {
+        value: `%${query.search}%`,
+      })
+    }
+
+    if (query.type) {
+      where.type = query.type
+    }
+
+    if (query.valueType) {
+      where.valueType = query.valueType
+    }
+
+    if (query.status !== undefined) {
+      where.status = query.status
+    }
+
+    const [data, total] = await this.rubricRepository.findAndCount({
+      where,
+      order: { code: 'DESC' },
+      skip,
+      take: limit,
+    })
+
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    }
+  }
+
   async associateRubricToStructure(
     createSalaryRubricDto: CreateSalaryRubricDto,
-    createdByEmployeeCode: number,
+    createdByUserId: number,
   ): Promise<SalaryRubric> {
     const { salaryStructureCode, rubricCode } = createSalaryRubricDto
+    const createdByEmployeeCode =
+      await this.getActiveEmployeeIdByUserId(createdByUserId)
 
     const salaryStructure = await this.salaryRepository.findOne({
       where: { id: salaryStructureCode },
