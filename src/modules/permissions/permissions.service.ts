@@ -183,6 +183,25 @@ export class PermissionsService {
     return this.userRepository.save(user)
   }
 
+  async findUserDirectPermissions(userId: number): Promise<Permission[]> {
+    if (isNaN(userId)) {
+      throw new BadRequestException('ID de usuário inválido')
+    }
+
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: {
+        permissions: true,
+      },
+    })
+
+    if (!user) {
+      throw new NotFoundException(`Usuário com ID ${userId} não encontrado`)
+    }
+
+    return user.permissions
+  }
+
   async findUserGroups(userId: number): Promise<Group[]> {
     if (isNaN(userId)) {
       throw new BadRequestException('ID de usuário inválido')

@@ -28,6 +28,7 @@ import { AttendanceSituation } from '../attendance/dto/create-attendance.dto'
 import { ContractService } from '../contract/contract.service'
 import { ContractType } from '../contract/entities/contract.entity'
 import { AcademicService } from '../academic/academic.service'
+import { EmployeeService } from '../employee/employee.service'
 
 const WORKED_HOURS_SITUATIONS = [
   AttendanceSituation.PRESENTE,
@@ -69,6 +70,8 @@ export class SalaryProcessingService {
     private readonly contractService: ContractService,
 
     private readonly academicService: AcademicService,
+
+    private readonly employeeService: EmployeeService,
   ) {}
 
   async process(
@@ -96,7 +99,7 @@ export class SalaryProcessingService {
   async validate(
     id: number,
     validateDto: ValidateSalaryProcessingDto,
-    validatorEmployeeId: number,
+    validatorUserId: number,
   ): Promise<SalaryProcessing> {
     const processing = await this.processingRepository.findOneBy({ id })
 
@@ -110,9 +113,19 @@ export class SalaryProcessingService {
       )
     }
 
+    const validator = await this.employeeService.findActiveByUserId(
+      validatorUserId,
+    )
+
+    if (!validator) {
+      throw new BadRequestException(
+        'Usuário autenticado não está associado a um colaborador ativo.',
+      )
+    }
+
     await this.processingRepository.update(id, {
       status: validateDto.status as string as SalaryProcessingStatus,
-      validatorEmployeeId,
+      validatorEmployeeId: validator.id,
       validatedAt: new Date(),
     })
 

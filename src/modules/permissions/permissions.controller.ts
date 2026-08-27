@@ -161,6 +161,13 @@ export class PermissionsController {
     )
   }
 
+  @Get('users/:userId/direct-permissions')
+  @Permissions(PermissionsEnum.READ_PERMISSIONS)
+  @ApiOperation({ summary: 'Listar permissões diretas de um usuário' })
+  findUserDirectPermissions(@Param('userId') userId: string) {
+    return this.permissionsService.findUserDirectPermissions(+userId)
+  }
+
   @Get('users/:userId/groups')
   @Permissions(PermissionsEnum.READ_PERMISSIONS)
   @ApiOperation({ summary: 'Listar grupos de um usuário' })
