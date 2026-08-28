@@ -29,6 +29,7 @@ import { ContractService } from '../contract/contract.service'
 import { ContractType } from '../contract/entities/contract.entity'
 import { AcademicService } from '../academic/academic.service'
 import { Employee } from '../employee/entities/employee.entity'
+import { User } from '../user/entities/user.entity'
 
 const WORKED_HOURS_SITUATIONS = [
   AttendanceSituation.PRESENTE,
@@ -180,28 +181,64 @@ export class SalaryProcessingService {
   }
 
   async findAll(query: SalaryProcessingQueryDto) {
-    const where: any = {}
+    const queryBuilder = this.processingRepository
+      .createQueryBuilder('processing')
+      .leftJoin('processing.responsibleEmployee', 'responsibleEmployee')
+      .leftJoin(User, 'responsibleUser', 'responsibleUser.id = responsibleEmployee.userId')
+      .leftJoin('processing.validatorEmployee', 'validatorEmployee')
+      .leftJoin(User, 'validatorUser', 'validatorUser.id = validatorEmployee.userId')
+      .addSelect('responsibleUser.name', 'responsible_employee_name')
+      .addSelect('validatorUser.name', 'validator_employee_name')
+      .orderBy('processing.id', 'DESC')
+      .skip(query.offset)
+      .take(query.limit)
 
-    if (query.id) where.id = query.id
-    if (query.status) where.status = query.status
+    if (query.id) {
+      queryBuilder.andWhere('processing.id = :id', { id: query.id })
+    }
+
+    if (query.status) {
+      queryBuilder.andWhere('processing.status = :status', {
+        status: query.status,
+      })
+    }
+
     if (query.responsibleEmployeeId) {
-      where.responsibleEmployeeId = query.responsibleEmployeeId
-    }
-    if (query.startDate && query.endDate) {
-      where.startDate = MoreThanOrEqual(new Date(query.startDate))
-      where.endDate = LessThanOrEqual(new Date(query.endDate))
-    } else if (query.startDate) {
-      where.startDate = MoreThanOrEqual(new Date(query.startDate))
-    } else if (query.endDate) {
-      where.endDate = LessThanOrEqual(new Date(query.endDate))
+      queryBuilder.andWhere(
+        'processing.responsibleEmployeeId = :responsibleEmployeeId',
+        { responsibleEmployeeId: query.responsibleEmployeeId },
+      )
     }
 
-    const [data, total] = await this.processingRepository.findAndCount({
-      where,
-      order: { id: 'DESC' },
-      skip: query.offset,
-      take: query.limit,
-    })
+    if (query.startDate) {
+      queryBuilder.andWhere('processing.startDate >= :startDate', {
+        startDate: new Date(query.startDate),
+      })
+    }
+
+    if (query.endDate) {
+      queryBuilder.andWhere('processing.endDate <= :endDate', {
+        endDate: new Date(query.endDate),
+      })
+    }
+
+    const { entities } = await queryBuilder.getRawAndEntities()
+    const total = await queryBuilder.getCount()
+    const employeeNames = await this.findEmployeeNamesByIds([
+      ...entities.map((processing) => processing.responsibleEmployeeId),
+      ...entities
+        .map((processing) => processing.validatorEmployeeId)
+        .filter((employeeId): employeeId is number => Boolean(employeeId)),
+    ])
+
+    const data = entities.map((processing) => ({
+      ...processing,
+      responsibleEmployeeName:
+        employeeNames.get(processing.responsibleEmployeeId) ?? null,
+      validatorEmployeeName: processing.validatorEmployeeId
+        ? employeeNames.get(processing.validatorEmployeeId) ?? null
+        : null,
+    }))
 
     return {
       data,
@@ -215,13 +252,32 @@ export class SalaryProcessingService {
   }
 
   async findOne(id: number) {
-    const processing = await this.processingRepository.findOne({
-      where: { id },
-    })
+    const { entities, raw } = await this.processingRepository
+      .createQueryBuilder('processing')
+      .leftJoin('processing.responsibleEmployee', 'responsibleEmployee')
+      .leftJoin(
+        User,
+        'responsibleUser',
+        'responsibleUser.id = responsibleEmployee.userId',
+      )
+      .leftJoin('processing.validatorEmployee', 'validatorEmployee')
+      .leftJoin(
+        User,
+        'validatorUser',
+        'validatorUser.id = validatorEmployee.userId',
+      )
+      .addSelect('responsibleUser.name', 'responsible_employee_name')
+      .addSelect('validatorUser.name', 'validator_employee_name')
+      .where('processing.id = :id', { id })
+      .getRawAndEntities()
+
+    const processing = entities[0]
 
     if (!processing) {
       throw new NotFoundException(`Processamento salarial ${id} não encontrado`)
     }
+
+    const row = raw[0] ?? {}
 
     const lines = await this.processingEmployeeRepository.find({
       where: { processingId: id },
@@ -281,13 +337,75 @@ export class SalaryProcessingService {
       },
     )
 
+    const skippedEmployees = processing.skippedEmployees
+      ? JSON.parse(processing.skippedEmployees)
+      : []
+    const employeeIds = [
+      ...new Set([
+        processing.responsibleEmployeeId,
+        processing.validatorEmployeeId,
+        ...employees.map((employee) => employee.employeeId),
+        ...skippedEmployees.map((employee) => employee.employeeId),
+      ].filter(Boolean)),
+    ]
+    const employeeNames = await this.findEmployeeNamesByIds(employeeIds)
+
     return {
       ...processing,
-      skippedEmployees: processing.skippedEmployees
-        ? JSON.parse(processing.skippedEmployees)
-        : [],
-      employees,
+      responsibleEmployeeName:
+        employeeNames.get(processing.responsibleEmployeeId) ??
+        row.responsible_employee_name ??
+        row.RESPONSIBLE_EMPLOYEE_NAME ??
+        null,
+      validatorEmployeeName: processing.validatorEmployeeId
+        ? employeeNames.get(processing.validatorEmployeeId) ??
+          row.validator_employee_name ??
+          row.VALIDATOR_EMPLOYEE_NAME ??
+          null
+        : null,
+      skippedEmployees: skippedEmployees.map((employee) => ({
+        ...employee,
+        employeeName: employeeNames.get(employee.employeeId) ?? null,
+      })),
+      employees: employees.map((employee) => ({
+        ...employee,
+        employeeName: employeeNames.get(employee.employeeId) ?? null,
+      })),
     }
+  }
+
+  private async findEmployeeNamesByIds(
+    employeeIds: number[],
+  ): Promise<Map<number, string>> {
+    const uniqueEmployeeIds = [
+      ...new Set(
+        employeeIds.map((employeeId) => Number(employeeId)).filter(Boolean),
+      ),
+    ]
+
+    if (uniqueEmployeeIds.length === 0) {
+      return new Map()
+    }
+
+    const placeholders = uniqueEmployeeIds
+      .map((_, index) => `:${index + 1}`)
+      .join(', ')
+    const employees = await this.employeeRepository.query(
+      `SELECT C.CODIGO AS "employeeId",
+              U.NOME AS "employeeName"
+         FROM GP_COLABORADORES C
+         JOIN GP_USUARIOS U
+           ON U.CODIGO = C.CODIGO_USUARIO
+        WHERE C.CODIGO IN (${placeholders})`,
+      uniqueEmployeeIds,
+    )
+
+    return new Map(
+      employees.map((employee) => [
+        Number(employee.employeeId ?? employee.EMPLOYEEID),
+        employee.employeeName ?? employee.EMPLOYEENAME,
+      ]),
+    )
   }
 
   private async assertNoOpenProcessingInPeriod(
