@@ -60,9 +60,9 @@ export class UserCollaboratorService {
                 UserCollaboratorEntity,
                 user,
             )
-            savedUser.person = savedPerson
+            const { password: _, ...userWithoutPassword } = savedUser
 
-            return savedUser
+            return userWithoutPassword as UserCollaboratorEntity
         })
     }
 

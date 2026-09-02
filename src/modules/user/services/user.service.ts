@@ -4,9 +4,9 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common'
-import { CreateUserDto } from './dto/create-user.dto'
-import { UpdateUserDto } from './dto/update-user.dto'
-import { UserQueryDto } from './dto/user-query.dto'
+import { CreateUserDto } from '../dto/create-user.dto'
+import { UpdateUserDto } from '../dto/update-user.dto'
+import { UserQueryDto } from '../dto/user-query.dto'
 import { InjectDataSource } from '@nestjs/typeorm'
 import { DataSource } from 'typeorm'
 import { EnvService } from 'src/commons/utils/env/env.service'
