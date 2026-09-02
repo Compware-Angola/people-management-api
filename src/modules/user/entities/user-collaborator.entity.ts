@@ -5,10 +5,11 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm'
+
 import { PersonEntity } from './person.entity'
 
 @Entity({ name: 'GP_USER_COLABORADOR' })
-export class UserColaboradorEntity {
+export class UserCollaboratorEntity {
   @PrimaryGeneratedColumn({
     name: 'CODIGO',
     type: 'number',
@@ -25,6 +26,7 @@ export class UserColaboradorEntity {
     name: 'EMAIL',
     type: 'varchar2',
     length: 255,
+    unique: true,
   })
   email: string
 
@@ -32,8 +34,16 @@ export class UserColaboradorEntity {
     name: 'USERNAME',
     type: 'varchar2',
     length: 100,
+    unique: true,
   })
   username: string
+
+  @Column({
+    name: 'SENHA',
+    type: 'varchar2',
+    length: 255,
+  })
+  password: string
 
   @ManyToOne(() => PersonEntity)
   @JoinColumn({

@@ -6,7 +6,7 @@ export class HashService {
   private readonly hashServiceUrl: string
 
   constructor(private readonly envService: EnvService) {
-    this.hashServiceUrl = this.envService.get('HASH_SERVICE_URL') || ''
+    this.hashServiceUrl = this.envService.get('HASH_SERVICE_URL')
   }
 
   async hash(text: string): Promise<string> {
