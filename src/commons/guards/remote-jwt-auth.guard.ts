@@ -7,9 +7,11 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common'
+import { Reflector } from '@nestjs/core'
 
 import axios, { AxiosInstance, isAxiosError } from 'axios'
 import { EnvService } from '../utils/env/env.service'
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator'
 
 interface ValidateTokenResponse {
   valid: boolean
@@ -32,7 +34,10 @@ export class RemoteJwtAuthGuard implements CanActivate {
   private readonly http: AxiosInstance
   private readonly authServiceUrl: string
 
-  constructor(private readonly envService: EnvService) {
+  constructor(
+    private readonly envService: EnvService,
+    private readonly reflector: Reflector,
+  ) {
     this.http = axios.create({ timeout: 8000 })
 
     const baseUrl = this.envService.get('HASH_SERVICE_URL')
@@ -43,8 +48,28 @@ export class RemoteJwtAuthGuard implements CanActivate {
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    const isPublic = this.reflector.getAllAndOverride<boolean>(
+      IS_PUBLIC_KEY,
+      [context.getHandler(), context.getClass()],
+    )
+
     const request = context.switchToHttp().getRequest()
     const token = this.extractTokenFromHeader(request)
+
+    // Rota pública: só valida o token se ele vier, mas não bloqueia se não vier
+    if (isPublic) {
+      if (!token) {
+        return true
+      }
+
+      try {
+        request.user = await this.validateToken(token)
+      } catch {
+        // token inválido/expirado em rota pública: ignora e segue como anônimo
+      }
+
+      return true
+    }
 
     if (!token) {
       throw new UnauthorizedException('Token não fornecido')
@@ -80,7 +105,6 @@ export class RemoteJwtAuthGuard implements CanActivate {
 
       return data.user
     } catch (error) {
-      // Se já é uma exceção HTTP nossa (ex: UnauthorizedException acima), apenas repropaga
       if (error instanceof HttpException) {
         throw error
       }

@@ -27,13 +27,14 @@ import { RemoteJwtAuthGuard } from 'src/commons/guards/remote-jwt-auth.guard'
 import { PermissionsGuard } from 'src/commons/guards/permissions.guard'
 import { Permissions } from 'src/commons/decorators/permissions.decorator'
 import { PermissionsEnum } from 'src/commons/enums/permissions.enum'
+import { Public } from 'src/commons/decorators/public.decorator'
 
 @ApiTags('Vacancies')
 @ApiBearerAuth()
 @Controller('vacancies')
 @UseGuards(RemoteJwtAuthGuard, PermissionsGuard)
 export class VacanciesController {
-  constructor(private readonly vacanciesService: VacanciesService) {}
+  constructor(private readonly vacanciesService: VacanciesService) { }
 
   @Post()
   @Permissions(PermissionsEnum.WRITE_VACANCIES)
@@ -63,6 +64,21 @@ export class VacanciesController {
     return this.vacanciesService.findAll(query)
   }
 
+  // ⚠️ Precisa vir ANTES de @Get(':code'), senão "public" é interpretado como :code
+  @Get('public')
+  @Public()
+  @ApiOperation({
+    summary: 'Listar vagas publicadas (acesso público, sem autenticação)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista paginada de vagas publicadas.',
+    type: [Vacancy],
+  })
+  findAllPublic(@Query() query: ListVacanciesQueryDto) {
+    return this.vacanciesService.findAllPublic(query)
+  }
+
   @Get(':code')
   @Permissions(PermissionsEnum.READ_VACANCIES)
   @ApiOperation({ summary: 'Buscar uma vaga pelo código' })
@@ -79,6 +95,26 @@ export class VacanciesController {
   @ApiResponse({ status: 404, description: 'Vaga não encontrada.' })
   findOne(@Param('code') code: string) {
     return this.vacanciesService.findOneByCode(code)
+  }
+
+  // ⚠️ Se quiser que o portal público também veja o detalhe de UMA vaga sem login,
+  // crie uma rota separada, ex: GET 'public/:code', também ANTES de ':code'
+  @Get('public/:code')
+  @Public()
+  @ApiOperation({ summary: 'Buscar uma vaga publicada pelo código (público)' })
+  @ApiParam({
+    name: 'code',
+    description: 'Código da vaga',
+    example: 'VAG-2026-000001',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Vaga publicada encontrada.',
+    type: Vacancy,
+  })
+  @ApiResponse({ status: 404, description: 'Vaga não encontrada.' })
+  findOnePublic(@Param('code') code: string) {
+    return this.vacanciesService.findOneByCodePublic(code)
   }
 
   @Patch(':code')
