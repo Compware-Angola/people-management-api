@@ -13,7 +13,6 @@ import { PERMISSIONS_KEY } from '../decorators/permissions.decorator'
 import { PermissionsEnum } from '../enums/permissions.enum'
 
 interface AuthenticatedUser {
-  platformUserKey?: string
   sub: number
   username?: string
   email?: string
