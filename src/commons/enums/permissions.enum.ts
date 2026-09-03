@@ -41,6 +41,9 @@ export enum PermissionsEnum {
   READ_APPLICATIONS = 'read:applications',
   WRITE_APPLICATIONS = 'write:applications',
 
+  READ_CANDIDACIES = 'read:candidacies',
+  WRITE_CANDIDACIES = 'write:candidacies',
+
   READ_ATTENDANCE = 'read:attendance',
   WRITE_ATTENDANCE = 'write:attendance',
 
