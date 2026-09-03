@@ -50,7 +50,7 @@ export class RemoteJwtAuthGuard implements CanActivate {
     }
 
     this.authServiceUrls = {
-      [AuthSourceEnum.DEFAULT]: `${baseUrl}/auth/validate-token`,
+      [AuthSourceEnum.DEFAULT]: `${baseUrl}/global/auth/current-user`,
       [AuthSourceEnum.PORTAL_CAND]: `${baseUrl}/auth/validate-token`,
     }
   }
