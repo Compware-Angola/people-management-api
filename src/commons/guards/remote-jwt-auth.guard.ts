@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   CanActivate,
   ExecutionContext,
@@ -17,11 +18,12 @@ interface ValidateTokenResponse {
 }
 
 export interface DecodedUserPayload {
-  username: string
-  nome: string
   sub: number
-  permissions: string[]
-  groups: any[]
+  personId: number
+  username: string
+  email: string
+  name: string
+  platform: string
   iat: number
   exp: number
 }

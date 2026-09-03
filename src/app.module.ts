@@ -24,6 +24,7 @@ import { CriteriaModule } from './modules/criteria/criteria.module'
 import { CriteriaVacancyModule } from './modules/criteria-vacancy/criteria-vacancy.module'
 import { VacancyRequestTypeModule } from './modules/vacancy-request-type/vacancy-request-type.module'
 import { ScreeningModule } from './modules/screening/screening.module'
+import { ProfessionalExperienceModule } from './modules/professional-experience/professional-experience.module'
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { ScreeningModule } from './modules/screening/screening.module'
     CriteriaVacancyModule,
     VacancyRequestTypeModule,
     ScreeningModule,
+    ProfessionalExperienceModule,
   ],
 })
 export class AppModule {}

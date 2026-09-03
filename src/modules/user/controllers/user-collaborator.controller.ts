@@ -78,10 +78,8 @@ export class UserCollaboratorController {
     return this.userCollaboratorService.findAll(query)
   }
 
-  // IMPORTANTE: esta rota estática tem de vir antes de `:id`,
-  // caso contrário "me" é interpretado como parâmetro `:id`.
   @Get('me')
-  @UseGuards(RemoteJwtAuthGuard, PermissionsGuard)
+  @UseGuards(RemoteJwtAuthGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -99,9 +97,8 @@ export class UserCollaboratorController {
     return this.userCollaboratorService.findMe(req.user)
   }
 
-  // Rota estática: tem de vir antes de `:id/completion`.
   @Get('me/completion')
-  @UseGuards(RemoteJwtAuthGuard, PermissionsGuard)
+  @UseGuards(RemoteJwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary:
@@ -120,9 +117,8 @@ export class UserCollaboratorController {
     return this.userCollaboratorService.checkMyCompletion(req.user)
   }
 
-  // Rota estática: tem de vir antes de `PATCH :id`.
   @Patch('me')
-  @UseGuards(RemoteJwtAuthGuard, PermissionsGuard)
+  @UseGuards(RemoteJwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Atualizar os próprios dados',
