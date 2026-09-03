@@ -26,6 +26,8 @@ import { VacancyRequestTypeModule } from './modules/vacancy-request-type/vacancy
 import { ScreeningModule } from './modules/screening/screening.module'
 import { ProfessionalExperienceModule } from './modules/professional-experience/professional-experience.module'
 
+import { CandidacyModule } from './modules/candidacy/candidacy.module';
+
 @Module({
   imports: [
     EnvModule,
@@ -55,6 +57,9 @@ import { ProfessionalExperienceModule } from './modules/professional-experience/
     VacancyRequestTypeModule,
     ScreeningModule,
     ProfessionalExperienceModule,
+
+    CandidacyModule,
+
   ],
 })
 export class AppModule {}
