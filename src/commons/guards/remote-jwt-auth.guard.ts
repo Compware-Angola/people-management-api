@@ -12,6 +12,10 @@ import { Reflector } from '@nestjs/core'
 import axios, { AxiosInstance, isAxiosError } from 'axios'
 import { EnvService } from '../utils/env/env.service'
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator'
+import {
+  AUTH_SOURCE_KEY,
+  AuthSourceEnum,
+} from '../decorators/auth-source.decorator'
 
 interface ValidateTokenResponse {
   valid: boolean
@@ -32,7 +36,7 @@ export interface DecodedUserPayload {
 export class RemoteJwtAuthGuard implements CanActivate {
   private readonly logger = new Logger(RemoteJwtAuthGuard.name)
   private readonly http: AxiosInstance
-  private readonly authServiceUrl: string
+  private readonly authServiceUrls: Record<AuthSourceEnum, string>
 
   constructor(
     private readonly envService: EnvService,
@@ -44,7 +48,11 @@ export class RemoteJwtAuthGuard implements CanActivate {
     if (!baseUrl) {
       throw new Error('HASH_SERVICE_URL não configurada')
     }
-    this.authServiceUrl = `${baseUrl}/auth/validate-token`
+
+    this.authServiceUrls = {
+      [AuthSourceEnum.DEFAULT]: `${baseUrl}/auth/validate-token`,
+      [AuthSourceEnum.PORTAL_CAND]: `${baseUrl}/auth/validate-token`,
+    }
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -52,6 +60,12 @@ export class RemoteJwtAuthGuard implements CanActivate {
       IS_PUBLIC_KEY,
       [context.getHandler(), context.getClass()],
     )
+
+    const authSource =
+      this.reflector.getAllAndOverride<AuthSourceEnum>(AUTH_SOURCE_KEY, [
+        context.getHandler(),
+        context.getClass(),
+      ]) ?? AuthSourceEnum.DEFAULT
 
     const request = context.switchToHttp().getRequest()
     const token = this.extractTokenFromHeader(request)
@@ -63,7 +77,7 @@ export class RemoteJwtAuthGuard implements CanActivate {
       }
 
       try {
-        request.user = await this.validateToken(token)
+        request.user = await this.validateToken(token, authSource)
       } catch {
         // token inválido/expirado em rota pública: ignora e segue como anônimo
       }
@@ -71,11 +85,12 @@ export class RemoteJwtAuthGuard implements CanActivate {
       return true
     }
 
+    // Rota protegida normal, mas validando contra a fonte definida (default ou outra)
     if (!token) {
       throw new UnauthorizedException('Token não fornecido')
     }
 
-    const user = await this.validateToken(token)
+    const user = await this.validateToken(token, authSource)
     request.user = user
     return true
   }
@@ -90,12 +105,22 @@ export class RemoteJwtAuthGuard implements CanActivate {
     return token
   }
 
-  private async validateToken(token: string): Promise<DecodedUserPayload> {
-    try {
-      const { data } = await this.http.get<ValidateTokenResponse>(
-        this.authServiceUrl,
-        { headers: { Authorization: `Bearer ${token}` } },
+  private async validateToken(
+    token: string,
+    source: AuthSourceEnum,
+  ): Promise<DecodedUserPayload> {
+    const url = this.authServiceUrls[source]
+    if (!url) {
+      this.logger.error(`Nenhuma URL de validação configurada para '${source}'`)
+      throw new ServiceUnavailableException(
+        'Serviço de autenticação indisponível',
       )
+    }
+
+    try {
+      const { data } = await this.http.get<ValidateTokenResponse>(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
 
       if (!data.valid || !data.user) {
         throw new UnauthorizedException(
@@ -121,6 +146,7 @@ export class RemoteJwtAuthGuard implements CanActivate {
           message: error.message,
           code: error.code,
           status: error.response?.status,
+          source,
         })
       } else {
         this.logger.error('Erro inesperado ao validar token', error)
