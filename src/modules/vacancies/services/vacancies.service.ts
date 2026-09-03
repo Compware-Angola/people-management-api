@@ -10,6 +10,7 @@ import {
   FindOptionsWhere,
   ILike,
   IsNull,
+  MoreThanOrEqual,
   Not,
   Repository,
 } from 'typeorm'
@@ -51,6 +52,15 @@ const VACANCY_RELATIONS = {
   createdByUser: true,
 } as const
 
+// Relações seguras para expor no portal público (sem dados de usuários internos)
+const PUBLIC_VACANCY_RELATIONS = {
+  position: true,
+  department: true,
+  hiringType: true,
+  state: true,
+  documents: true,
+} as const
+
 @Injectable()
 export class VacanciesService {
   constructor(
@@ -66,7 +76,7 @@ export class VacanciesService {
     private readonly gpVacancyStateRepository: Repository<VacancyState>,
     @InjectRepository(User)
     private readonly gpUserRepository: Repository<User>,
-  ) {}
+  ) { }
 
   async create(
     dto: CreateVacancyDto,
@@ -185,19 +195,19 @@ export class VacanciesService {
       ...(stateId !== undefined ? { stateId } : {}),
       ...(publicationStart && publicationEnd
         ? {
-            publicationDate: Between(
-              new Date(`${publicationStart}T00:00:00`),
-              new Date(`${publicationEnd}T23:59:59`),
-            ),
-          }
+          publicationDate: Between(
+            new Date(`${publicationStart}T00:00:00`),
+            new Date(`${publicationEnd}T23:59:59`),
+          ),
+        }
         : {}),
       ...(closingStart && closingEnd
         ? {
-            closingDate: Between(
-              new Date(`${closingStart}T00:00:00`),
-              new Date(`${closingEnd}T23:59:59`),
-            ),
-          }
+          closingDate: Between(
+            new Date(`${closingStart}T00:00:00`),
+            new Date(`${closingEnd}T23:59:59`),
+          ),
+        }
         : {}),
     }
 
@@ -210,6 +220,101 @@ export class VacanciesService {
     })
 
     return PaginatedResponseDto.create(data, total, page, limit)
+  }
+
+  /**
+   * Listagem pública (portal de vagas), sem autenticação.
+   * Sempre força o filtro para vagas com estado PUBLICADO, ignorando
+   * qualquer stateId vindo da query, e devolve um payload reduzido.
+   */
+  async findAllPublic(
+    query: ListVacanciesQueryDto,
+  ): Promise<PaginatedResponseDto<Record<string, any>>> {
+    const publishedState = await this.findStateByAcronym(
+      VacancyStateCode.PUBLISHED,
+    )
+
+    const {
+      search,
+      positionId,
+      departmentId,
+      hiringTypeId,
+      publicationStart,
+      publicationEnd,
+      closingStart,
+      closingEnd,
+      page,
+      limit,
+      offset,
+    } = query
+
+    const now = new Date()
+
+    const baseWhere: FindOptionsWhere<Vacancy> = {
+      stateId: publishedState.code,
+      ...(search ? { vacancyCode: ILike(`%${search}%`) } : {}),
+      ...(positionId !== undefined ? { positionId } : {}),
+      ...(departmentId !== undefined ? { departmentId } : {}),
+      ...(hiringTypeId !== undefined ? { hiringTypeId } : {}),
+      ...(publicationStart && publicationEnd
+        ? {
+          publicationDate: Between(
+            new Date(`${publicationStart}T00:00:00`),
+            new Date(`${publicationEnd}T23:59:59`),
+          ),
+        }
+        : {}),
+      ...(closingStart && closingEnd
+        ? {
+          closingDate: Between(
+            new Date(`${closingStart}T00:00:00`),
+            new Date(`${closingEnd}T23:59:59`),
+          ),
+        }
+        : {}),
+    }
+
+    // Só mostra vagas cujo prazo ainda não passou (ou sem prazo definido)
+    const where: FindOptionsWhere<Vacancy>[] = [
+      { ...baseWhere, closingDate: MoreThanOrEqual(now) },
+      { ...baseWhere, closingDate: IsNull() },
+    ]
+
+    const [data, total] = await this.gpVacancyRepository.findAndCount({
+      where,
+      relations: PUBLIC_VACANCY_RELATIONS,
+      order: { publicationDate: 'DESC', code: 'DESC' },
+      skip: offset,
+      take: limit,
+    })
+
+    return PaginatedResponseDto.create(
+      data.map((vacancy) => this.toPublicVacancy(vacancy)),
+      total,
+      page,
+      limit,
+    )
+  }
+
+  /**
+   * Detalhe público de uma vaga. Só retorna se a vaga estiver PUBLICADA
+   * (evita vazar rascunhos, suspensas, canceladas etc. via URL direta).
+   */
+  async findOneByCodePublic(
+    vacancyCode: string,
+  ): Promise<Record<string, any>> {
+    const vacancy = await this.gpVacancyRepository.findOne({
+      where: { vacancyCode },
+      relations: PUBLIC_VACANCY_RELATIONS,
+    })
+
+    if (!vacancy || vacancy.state?.acronym !== VacancyStateCode.PUBLISHED) {
+      throw new NotFoundException(
+        `Vaga com o código ${vacancyCode} não encontrada`,
+      )
+    }
+
+    return this.toPublicVacancy(vacancy)
   }
 
   async findOneByCode(vacancyCode: string): Promise<Vacancy> {
@@ -613,6 +718,34 @@ export class VacanciesService {
   ): void {
     if (!vacancy.state || !allowedStates.includes(vacancy.state.acronym)) {
       throw new BadRequestException(message)
+    }
+  }
+
+  /**
+   * Remove campos internos/sensíveis antes de expor a vaga no portal público
+   * (ids de usuários responsáveis, justificativas de suspensão/cancelamento,
+   * requisitionId interno, etc). Ajuste conforme os campos reais da entidade.
+   */
+  private toPublicVacancy(vacancy: Vacancy): Record<string, any> {
+    return {
+      code: vacancy.vacancyCode,
+      numberOfVacancies: vacancy.numberOfVacancies,
+      publicationDate: vacancy.publicationDate,
+      closingDate: vacancy.closingDate,
+      state: vacancy.state
+        ? { code: vacancy.state.code, acronym: vacancy.state.acronym }
+        : null,
+      position: vacancy.position ?? null,
+      department: vacancy.department ?? null,
+      hiringType: vacancy.hiringType ?? null,
+      documents: (vacancy.documents ?? []).map((doc) => ({
+        type: doc.type,
+        originalName: doc.originalName,
+        description: doc.description,
+        // path é omitido de propósito — se o portal precisa baixar o arquivo,
+        // exponha uma rota pública dedicada (ex: /vacancies/public/:code/documents/:id)
+        // que gera uma URL assinada/temporária, em vez do path bruto do storage.
+      })),
     }
   }
 }
