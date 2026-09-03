@@ -50,7 +50,7 @@ export class UserCollaboratorService {
     @InjectDataSource()
     private readonly dataSource: DataSource,
     private readonly AuthApiService: AuthApiService,
-  ) {}
+  ) { }
 
   async create(
     dto: CreateUserCollaboratorDto,
@@ -134,19 +134,20 @@ export class UserCollaboratorService {
 
     let user: UserCollaboratorEntity | null = null
 
-    if (payload?.sub !== undefined && payload.sub !== null) {
+    if (payload?.platformUserKey !== undefined && payload.platformUserKey !== null) {
       user = await repository.findOne({
-        where: { id: Number(payload.sub) },
+        where: { id: Number(payload.platformUserKey) },
         relations: { person: true },
       })
     }
-
-    if (!user && payload?.username) {
-      user = await repository.findOne({
-        where: { username: payload.username.trim().toLowerCase() },
-        relations: { person: true },
-      })
-    }
+    /*
+      if (!user && payload?.username) {
+        user = await repository.findOne({
+          where: { username: payload.username.trim().toLowerCase() },
+          relations: { person: true },
+        })
+      }
+      */
 
     if (!user) {
       throw new NotFoundException(
