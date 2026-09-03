@@ -35,13 +35,14 @@ import {
   RemoteJwtAuthGuard,
 } from 'src/commons/guards/remote-jwt-auth.guard'
 import { PermissionsGuard } from 'src/commons/guards/permissions.guard'
+import { AuthSource, AuthSourceEnum } from 'src/commons/decorators/auth-source.decorator'
 
 @ApiTags('User Collaborators')
 @Controller('users/collaborators')
 export class UserCollaboratorController {
   constructor(
     private readonly userCollaboratorService: UserCollaboratorService,
-  ) {}
+  ) { }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -78,6 +79,7 @@ export class UserCollaboratorController {
     return this.userCollaboratorService.findAll(query)
   }
 
+  @AuthSource(AuthSourceEnum.PORTAL_CAND)
   @Get('me')
   @UseGuards(RemoteJwtAuthGuard)
   @ApiBearerAuth()
@@ -97,6 +99,7 @@ export class UserCollaboratorController {
     return this.userCollaboratorService.findMe(req.user)
   }
 
+  @AuthSource(AuthSourceEnum.PORTAL_CAND)
   @Get('me/completion')
   @UseGuards(RemoteJwtAuthGuard)
   @ApiBearerAuth()
@@ -117,6 +120,7 @@ export class UserCollaboratorController {
     return this.userCollaboratorService.checkMyCompletion(req.user)
   }
 
+  @AuthSource(AuthSourceEnum.PORTAL_CAND)
   @Patch('me')
   @UseGuards(RemoteJwtAuthGuard)
   @ApiBearerAuth()

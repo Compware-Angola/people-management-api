@@ -134,20 +134,19 @@ export class UserCollaboratorService {
 
     let user: UserCollaboratorEntity | null = null
 
-    if (payload?.platformUserKey !== undefined && payload.platformUserKey !== null) {
+    if (payload?.sub !== undefined && payload.sub !== null) {
       user = await repository.findOne({
-        where: { id: Number(payload.platformUserKey) },
+        where: { id: Number(payload.sub) },
         relations: { person: true },
       })
     }
-    /*
-      if (!user && payload?.username) {
-        user = await repository.findOne({
-          where: { username: payload.username.trim().toLowerCase() },
-          relations: { person: true },
-        })
-      }
-      */
+
+    if (!user && payload?.username) {
+      user = await repository.findOne({
+        where: { username: payload.username.trim().toLowerCase() },
+        relations: { person: true },
+      })
+    }
 
     if (!user) {
       throw new NotFoundException(
