@@ -593,7 +593,7 @@ export class TeacherApplicationsService {
   }
   private async findUserByDocumentNumber(bi: string): Promise<User | null> {
     return this.userRepository.findOne({
-      where: { bi },
+      where: { person: { identityDocument: bi } },
     })
   }
 

@@ -2,58 +2,57 @@ import {
   Entity,
   Column,
   PrimaryGeneratedColumn,
-  CreateDateColumn,
   OneToMany,
   ManyToMany,
+  OneToOne,
+  JoinColumn,
 } from 'typeorm'
 import { Group } from '../../permissions/entities/group.entity'
 import { Permission } from '../../permissions/entities/permission.entity'
 import { UserGroup } from '../../permissions/entities/user-group.entity'
 import { UserPermission } from '../../permissions/entities/user-permission.entity'
+import { PersonEntity } from './person.entity'
 
 @Entity('GP_USUARIOS')
 export class User {
-  @PrimaryGeneratedColumn('identity', { name: 'CODIGO' })
+  @PrimaryGeneratedColumn('identity', {
+    name: 'CODIGO',
+    type: 'number',
+  })
   id: number
 
-  @Column({ name: 'NOME' })
-  name: string
-
-  @Column({ name: 'BI', unique: true })
-  bi: string
-
-  @Column({ name: 'NIF', unique: true, nullable: true })
-  nif?: string
-
-  @Column({ name: 'TELEFONE' })
-  phone: string
-
-  @Column({ name: 'TELEFONE_ALTERNATIVO', nullable: true })
-  alternativePhone?: string
-
-  @Column({ name: 'PROVINCIA' })
-  province: string
-
-  @Column({ name: 'MUNICIPIO' })
-  municipality: string
-
-  @Column({ name: 'MORADA' })
-  address: string
-
-  @Column({ name: 'EMAIL', unique: true })
+  @Column({
+    name: 'EMAIL',
+    type: 'varchar2',
+    length: 150,
+    unique: true,
+  })
   email: string
 
-  @Column({ name: 'SENHA', select: false })
-  password?: string
+  @Column({
+    name: 'EXTERNAL_ID',
+    type: 'number',
+    nullable: true,
+  })
+  externalId: number | null
 
-  @Column({ name: 'PRECISA_MUDAR_SENHA', type: 'number', default: 1 })
-  mustChangePassword: number
+  @Column({
+    name: 'ID_PESSOA',
+    type: 'number',
+    nullable: true,
+    unique: true,
+  })
+  personId: number | null
 
-  @Column({ name: 'ESTADO', type: 'number', default: 1 })
-  status: number
-
-  @CreateDateColumn({ name: 'CRIADO_EM', type: 'date' })
-  createdAt: Date
+  @OneToOne(() => PersonEntity, {
+    nullable: true,
+  })
+  @JoinColumn({
+    name: 'ID_PESSOA',
+    referencedColumnName: 'id',
+    foreignKeyConstraintName: 'FK_GP_USUARIOS_PESSOA',
+  })
+  person: PersonEntity
 
   @OneToMany(() => UserGroup, (userGroup) => userGroup.user)
   userGroups: UserGroup[]

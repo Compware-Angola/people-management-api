@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   BadRequestException,
   Injectable,
@@ -8,8 +9,11 @@ import { CreateUserDto } from '../dto/create-user.dto'
 import { UpdateUserDto } from '../dto/update-user.dto'
 import { UserQueryDto } from '../dto/user-query.dto'
 import { InjectDataSource } from '@nestjs/typeorm'
-import { DataSource } from 'typeorm'
+import { DataSource, QueryRunner } from 'typeorm'
 import { EnvService } from 'src/commons/utils/env/env.service'
+import { AuthApiService } from 'src/commons/services/auth-api.service'
+import { PersonEntity } from '../entities/person.entity'
+import { User } from '../entities/user.entity'
 
 @Injectable()
 export class UserService {
@@ -18,62 +22,67 @@ export class UserService {
   constructor(
     @InjectDataSource()
     private readonly dataSource: DataSource,
+    private readonly authApiService: AuthApiService,
     private readonly envService: EnvService,
   ) {
     this.hashServiceUrl = this.envService.get('HASH_SERVICE_URL') || ''
   }
 
-  private async getHash(text: string): Promise<string> {
+  async create(createUserDto: CreateUserDto) {
+    const [biExists, nifExists, phoneExists] = await Promise.all([
+      this.checkBI(createUserDto.bi),
+      createUserDto.nif
+        ? this.checkNIF(createUserDto.nif)
+        : Promise.resolve(false),
+      this.checkPhoneNumber(createUserDto.phone),
+    ])
+    if (biExists) {
+      throw new BadRequestException('Já existe um usuário com este BI')
+    }
+    if (nifExists) {
+      throw new BadRequestException('Já existe um usuário com este NIF')
+    }
+    if (phoneExists) {
+      throw new BadRequestException('Já existe um usuário com este telefone')
+    }
+    const { firstName, lastName } = this.splitName(createUserDto.name)
+    const queryRunner = this.dataSource.createQueryRunner()
     try {
-      const response = await fetch(`${this.hashServiceUrl}/hash`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ texto: text }),
+      await queryRunner.connect()
+      await queryRunner.startTransaction()
+      const person = await this.createPerson(queryRunner, createUserDto)
+      await queryRunner.manager.save(PersonEntity, person)
+
+      const identityResponse = await this.authApiService.createIdentity({
+        email: createUserDto.email,
+        firstName,
+        lastName,
+        phone: createUserDto.phone,
+        bi: createUserDto.bi,
+        avatar: 'https://cdn.uma.ao/avatars/default.png',
+        password: createUserDto.bi,
+        platforms: [
+          {
+            platformCode: 'GP',
+            platformUserKey: 'GP',
+          },
+        ],
       })
 
-      if (!response.ok) {
-        throw new Error(`Hash service returned ${response.status}`)
-      }
+      const externalId = identityResponse.identity.id
+      const user = queryRunner.manager.create(User, {
+        email: createUserDto.email,
+        personId: person.id,
+        externalId,
+      })
 
-      const data = await response.json()
-      return data.hash
-    } catch (error) {
-      console.error('Error calling hash service:', error)
-      throw new InternalServerErrorException('Erro ao gerar hash da senha')
-    }
-  }
-
-  async create(createUserDto: CreateUserDto) {
-    const passwordHash = await this.getHash(createUserDto.bi)
-
-    try {
-      await this.dataSource.query(
-        `INSERT INTO GP_USUARIOS (
-          NOME, BI, NIF, TELEFONE, TELEFONE_ALTERNATIVO,
-          PROVINCIA, MUNICIPIO, MORADA, EMAIL,
-          SENHA, PRECISA_MUDAR_SENHA, ESTADO
-        ) VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9, :10, :11, :12)`,
-        [
-          createUserDto.name,
-          createUserDto.bi,
-          createUserDto.nif,
-          createUserDto.phone,
-          createUserDto.alternativePhone,
-          createUserDto.province,
-          createUserDto.municipality,
-          createUserDto.address,
-          createUserDto.email,
-          passwordHash,
-          1, // PRECISA_MUDAR_SENHA
-          createUserDto.status ?? 1,
-        ],
-      )
-
-      return { message: 'Usuário cadastrado com sucesso' }
+      await queryRunner.manager.save(User, user)
+      await queryRunner.commitTransaction()
     } catch (error) {
       this.handleDatabaseError(error, 'cadastrar')
+      await queryRunner.rollbackTransaction()
+    } finally {
+      await queryRunner.release()
     }
   }
 
@@ -218,7 +227,7 @@ export class UserService {
     }
 
     if (updateUserDto.password) {
-      const passwordHash = await this.getHash(updateUserDto.password)
+      const passwordHash = ''
       fields.push(`SENHA = :${values.length + 1}`)
       values.push(passwordHash)
       fields.push(`PRECISA_MUDAR_SENHA = :${values.length + 1}`)
@@ -259,5 +268,64 @@ export class UserService {
     }
     console.error(`Error to ${action} user:`, error)
     throw new InternalServerErrorException(`Erro ao ${action} usuário.`)
+  }
+  private async createPerson(
+    queryRunner: QueryRunner,
+    createUserDto: CreateUserDto,
+  ): Promise<PersonEntity> {
+    const person = queryRunner.manager.create(PersonEntity, {
+      name: createUserDto.name,
+      identityDocument: createUserDto.bi ?? null,
+      taxIdentificationNumber: createUserDto.nif ?? null,
+      phone: createUserDto.phone ?? null,
+      alternativePhone: createUserDto.alternativePhone ?? null,
+      status: createUserDto.status ?? 1,
+    })
+
+    return queryRunner.manager.save(PersonEntity, person)
+  }
+  private splitName(fullName: string): {
+    firstName: string
+    lastName: string
+  } {
+    const parts = fullName.trim().split(/\s+/).filter(Boolean)
+
+    if (parts.length === 0) {
+      return {
+        firstName: '',
+        lastName: '',
+      }
+    }
+
+    if (parts.length === 1) {
+      return {
+        firstName: parts[0],
+        lastName: '',
+      }
+    }
+
+    return {
+      firstName: parts[0],
+      lastName: parts.slice(1).join(' '),
+    }
+  }
+  private async checkBI(bi: string): Promise<boolean> {
+    return this.dataSource
+      .getRepository(PersonEntity)
+      .findOne({ where: { identityDocument: bi } })
+      .then((person) => !!person)
+  }
+
+  private async checkNIF(nif: string): Promise<boolean> {
+    return this.dataSource
+      .getRepository(PersonEntity)
+      .findOne({ where: { taxIdentificationNumber: nif } })
+      .then((person) => !!person)
+  }
+  private async checkPhoneNumber(phone: string): Promise<boolean> {
+    return this.dataSource
+      .getRepository(PersonEntity)
+      .findOne({ where: { phone } })
+      .then((person) => !!person)
   }
 }

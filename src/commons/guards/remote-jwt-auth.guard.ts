@@ -24,6 +24,7 @@ interface ValidateTokenResponse {
 }
 
 export interface DecodedUserPayload {
+  platformUserKey?: string
   sub: number
   personId: number
   username: string
@@ -124,7 +125,7 @@ export class RemoteJwtAuthGuard implements CanActivate {
         headers: { Authorization: `Bearer ${token}` },
       })
 
-      if (!data.valid || !data.user) {
+      if (!data.user) {
         throw new UnauthorizedException(
           'Token inválido ou usuário não encontrado',
         )
