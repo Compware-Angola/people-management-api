@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   BadRequestException,
   Injectable,
@@ -12,6 +13,7 @@ import { DataSource, QueryRunner } from 'typeorm'
 import { EnvService } from 'src/commons/utils/env/env.service'
 import { AuthApiService } from 'src/commons/services/auth-api.service'
 import { PersonEntity } from '../entities/person.entity'
+import { User } from '../entities/user.entity'
 
 @Injectable()
 export class UserService {
@@ -20,7 +22,7 @@ export class UserService {
   constructor(
     @InjectDataSource()
     private readonly dataSource: DataSource,
-    private readonly AuthApiService: AuthApiService,
+    private readonly authApiService: AuthApiService,
     private readonly envService: EnvService,
   ) {
     this.hashServiceUrl = this.envService.get('HASH_SERVICE_URL') || ''
@@ -65,41 +67,44 @@ export class UserService {
     if (phoneExists) {
       throw new BadRequestException('Já existe um usuário com este telefone')
     }
-    
+    const { firstName, lastName } = this.splitName(createUserDto.name)
     const queryRunner = this.dataSource.createQueryRunner()
-    await queryRunner.connect()
-    await queryRunner.startTransaction()
-    const person = await this.createPerson(queryRunner, createUserDto)
-    await queryRunner.manager.save(PersonEntity, person)
-
-    const passwordHash = await this.getHash(createUserDto.bi)
-
     try {
-      await this.dataSource.query(
-        `INSERT INTO GP_USUARIOS (
-          NOME, BI, NIF, TELEFONE, TELEFONE_ALTERNATIVO,
-          PROVINCIA, MUNICIPIO, MORADA, EMAIL,
-          SENHA, PRECISA_MUDAR_SENHA, ESTADO
-        ) VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9, :10, :11, :12)`,
-        [
-          createUserDto.name,
-          createUserDto.bi,
-          createUserDto.nif,
-          createUserDto.phone,
-          createUserDto.alternativePhone,
-          createUserDto.province,
-          createUserDto.municipality,
-          createUserDto.address,
-          createUserDto.email,
-          passwordHash,
-          1, // PRECISA_MUDAR_SENHA
-          createUserDto.status ?? 1,
-        ],
-      )
+      await queryRunner.connect()
+      await queryRunner.startTransaction()
+      const person = await this.createPerson(queryRunner, createUserDto)
+      await queryRunner.manager.save(PersonEntity, person)
 
-      return { message: 'Usuário cadastrado com sucesso' }
+      const identityResponse = await this.authApiService.createIdentity({
+        email: createUserDto.email,
+        firstName,
+        lastName,
+        phone: createUserDto.phone,
+        bi: createUserDto.bi,
+        avatar: '',
+        password: createUserDto.bi,
+        platforms: [
+          {
+            platformCode: 'GP',
+            platformUserKey: 'GP',
+          },
+        ],
+      })
+
+      const externalId = identityResponse.identity.id
+      const user = queryRunner.manager.create(User, {
+        email: createUserDto.email,
+        personId: person.id,
+        externalId,
+      })
+
+      await queryRunner.manager.save(User, user)
+      await queryRunner.commitTransaction()
     } catch (error) {
       this.handleDatabaseError(error, 'cadastrar')
+      await queryRunner.rollbackTransaction()
+    } finally {
+      await queryRunner.release()
     }
   }
 
