@@ -25,6 +25,7 @@ import { CriteriaVacancyModule } from './modules/criteria-vacancy/criteria-vacan
 import { VacancyRequestTypeModule } from './modules/vacancy-request-type/vacancy-request-type.module'
 import { ScreeningModule } from './modules/screening/screening.module'
 import { ProfessionalExperienceModule } from './modules/professional-experience/professional-experience.module'
+import { InterviewScheduleModule } from './modules/interview-schedule/interview-schedule.module'
 
 import { CandidacyModule } from './modules/candidacy/candidacy.module'
 
@@ -57,6 +58,7 @@ import { CandidacyModule } from './modules/candidacy/candidacy.module'
     VacancyRequestTypeModule,
     ScreeningModule,
     ProfessionalExperienceModule,
+    InterviewScheduleModule,
 
     CandidacyModule,
   ],

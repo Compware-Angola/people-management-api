@@ -28,28 +28,6 @@ export class UserService {
     this.hashServiceUrl = this.envService.get('HASH_SERVICE_URL') || ''
   }
 
-  private async getHash(text: string): Promise<string> {
-    try {
-      const response = await fetch(`${this.hashServiceUrl}/hash`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ texto: text }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`Hash service returned ${response.status}`)
-      }
-
-      const data = await response.json()
-      return data.hash
-    } catch (error) {
-      console.error('Error calling hash service:', error)
-      throw new InternalServerErrorException('Erro ao gerar hash da senha')
-    }
-  }
-
   async create(createUserDto: CreateUserDto) {
     const [biExists, nifExists, phoneExists] = await Promise.all([
       this.checkBI(createUserDto.bi),
@@ -81,7 +59,7 @@ export class UserService {
         lastName,
         phone: createUserDto.phone,
         bi: createUserDto.bi,
-        avatar: '',
+        avatar: 'https://cdn.uma.ao/avatars/default.png',
         password: createUserDto.bi,
         platforms: [
           {
@@ -249,7 +227,7 @@ export class UserService {
     }
 
     if (updateUserDto.password) {
-      const passwordHash = await this.getHash(updateUserDto.password)
+      const passwordHash = ''
       fields.push(`SENHA = :${values.length + 1}`)
       values.push(passwordHash)
       fields.push(`PRECISA_MUDAR_SENHA = :${values.length + 1}`)

@@ -13,6 +13,7 @@ import { PERMISSIONS_KEY } from '../decorators/permissions.decorator'
 import { PermissionsEnum } from '../enums/permissions.enum'
 
 interface AuthenticatedUser {
+  platformUserKey?: string
   sub: number
   username?: string
   email?: string
@@ -52,11 +53,11 @@ export class PermissionsGuard implements CanActivate {
 
     const user = request.user
 
-    if (!user?.sub) {
+    if (!user?.platformUserKey) {
       throw new ForbiddenException('Usuário não autenticado')
     }
 
-    const userId = Number(user.sub)
+    const userId = Number(user.platformUserKey)
 
     if (Number.isNaN(userId)) {
       throw new ForbiddenException('ID de usuário inválido')
