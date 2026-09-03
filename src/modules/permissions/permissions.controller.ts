@@ -32,13 +32,15 @@ import { RemoteJwtAuthGuard } from 'src/commons/guards/remote-jwt-auth.guard'
 import { PermissionsGuard } from 'src/commons/guards/permissions.guard'
 import { Permissions } from 'src/commons/decorators/permissions.decorator'
 import { PermissionsEnum } from 'src/commons/enums/permissions.enum'
+import { AuthSource, AuthSourceEnum } from 'src/commons/decorators/auth-source.decorator'
 
 @ApiTags('Permissions & Groups')
 @ApiBearerAuth()
 @UseGuards(RemoteJwtAuthGuard, PermissionsGuard)
+@AuthSource(AuthSourceEnum.PORTAL_CAND)
 @Controller('permissions')
 export class PermissionsController {
-  constructor(private readonly permissionsService: PermissionsService) {}
+  constructor(private readonly permissionsService: PermissionsService) { }
   @Get('me')
   async myPermissions(@Req() req: any) {
     const permissions = await this.permissionsService.myPermissions(

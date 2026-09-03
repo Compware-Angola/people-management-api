@@ -16,6 +16,7 @@ interface AuthenticatedUser {
   sub: number
   username?: string
   email?: string
+  platformUserKey?: string
 }
 
 declare module 'express' {
@@ -29,7 +30,7 @@ export class PermissionsGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly dataSource: DataSource,
-  ) {}
+  ) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const enablePermissionGuard =
@@ -52,11 +53,11 @@ export class PermissionsGuard implements CanActivate {
 
     const user = request.user
 
-    if (!user?.sub) {
+    if (!user?.platformUserKey) {
       throw new ForbiddenException('Usuário não autenticado')
     }
 
-    const userId = Number(user.sub)
+    const userId = Number(user.platformUserKey)
 
     if (Number.isNaN(userId)) {
       throw new ForbiddenException('ID de usuário inválido')
