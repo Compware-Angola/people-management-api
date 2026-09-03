@@ -206,12 +206,10 @@ export class UserCollaboratorService {
     return this.update(id, dto)
   }
 
-
   async checkCompletion(id: number): Promise<ProfileCompletion> {
     return this.buildCompletion(await this.findOne(id))
   }
 
- 
   async checkMyCompletion(
     payload: DecodedUserPayload,
   ): Promise<ProfileCompletion> {
