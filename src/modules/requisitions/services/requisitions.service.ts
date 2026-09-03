@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   BadRequestException,
   ConflictException,
@@ -189,7 +188,7 @@ export class RequisitionsService {
       ...(requesterName
         ? {
             requester: {
-              name: ILike(`%${requesterName}%`),
+              email: ILike(`%${requesterName}%`),
             },
           }
         : {}),
@@ -829,9 +828,9 @@ export class RequisitionsService {
       throw new NotFoundException(`Usuário ${role} não encontrado`)
     }
 
-    if (user.status !== 1) {
-      throw new BadRequestException(`O usuário ${role} está inativo`)
-    }
+    // if (user.status !== 1) {
+    //   throw new BadRequestException(`O usuário ${role} está inativo`)
+    // }
 
     return user
   }

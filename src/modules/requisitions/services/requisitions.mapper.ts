@@ -26,7 +26,7 @@ function mapHistory(
     },
     responsible: {
       id: entry.responsible?.id,
-      name: entry.responsible?.name,
+      name: entry.responsible.person?.name,
     },
   }))
 }
@@ -63,7 +63,7 @@ export function toRequisitionResponseDto(
     },
     requester: {
       id: requisition.requester?.id,
-      name: requisition.requester?.name,
+      name: requisition.requester?.person?.name,
     },
     state: {
       code: requisition.state?.code,
