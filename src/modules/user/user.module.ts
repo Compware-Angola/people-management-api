@@ -7,12 +7,12 @@ import { UserCollaboratorService } from './services/user-collaborator.service'
 import { UserService } from './services/user.service'
 import { PersonEntity } from './entities/person.entity'
 import { UserCollaboratorEntity } from './entities/user-collaborator.entity'
-import { HashService } from 'src/commons/services/hash.service'
+import { AuthApiService } from 'src/commons/services/auth-api.service'
 
 @Module({
   imports: [TypeOrmModule.forFeature([User, PersonEntity, UserCollaboratorEntity])],
   controllers: [UserController, UserCollaboratorController],
-  providers: [UserCollaboratorService, UserService, HashService],
+  providers: [UserCollaboratorService, UserService, AuthApiService],
   exports: [UserCollaboratorService, UserService],
 })
 export class UserModule { }

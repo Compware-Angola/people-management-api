@@ -8,7 +8,7 @@ import { CandidateEntity } from './entity/candidate.entity'
 import { AcademicEducationEntity } from './entity/academic-education.entity'
 import { TeachingExperienceEntity } from './entity/teaching-experience.entity'
 import { TeacherApplicationDocument } from './entity/teacher-application-document.entity'
-import { HashService } from 'src/commons/services/hash.service'
+import { AuthApiService } from 'src/commons/services/auth-api.service'
 import { User } from '../user/entities/user.entity'
 import { ApplicationStatusEntity } from './entity/application-status.entity'
 import { AcademicDegreeEntity } from './entity/academic-degree.entity'
@@ -32,6 +32,6 @@ import { HttpModule } from '@nestjs/axios'
     }),
   ],
   controllers: [ApplicationsController],
-  providers: [StorageService, HashService, TeacherApplicationsService],
+  providers: [StorageService, AuthApiService, TeacherApplicationsService],
 })
 export class ApplicationsModule {}

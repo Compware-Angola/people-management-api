@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common'
 import { PaginatedResponseDto } from 'src/commons/dto/pagination-response.dto'
 import { DecodedUserPayload } from 'src/commons/guards/remote-jwt-auth.guard'
-import { HashService } from 'src/commons/services/hash.service'
+import { AuthApiService } from 'src/commons/services/auth-api.service'
 
 type UserCollaboratorView = {
   id: number
@@ -49,7 +49,7 @@ export class UserCollaboratorService {
   constructor(
     @InjectDataSource()
     private readonly dataSource: DataSource,
-    private readonly hashService: HashService,
+    private readonly AuthApiService: AuthApiService,
   ) {}
 
   async create(
@@ -73,7 +73,7 @@ export class UserCollaboratorService {
 
       const savedPerson = await manager.save(PersonEntity, person)
       const username = await this.generateUsername(savedPerson.name, manager)
-      const password = await this.hashService.hash(dto.password)
+      const password = await this.AuthApiService.hash(dto.password)
       const user = manager.create(UserCollaboratorEntity, {
         personId: savedPerson.id,
         email,
