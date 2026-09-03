@@ -27,18 +27,19 @@ import { RemoteJwtAuthGuard } from 'src/commons/guards/remote-jwt-auth.guard'
 import { PermissionsGuard } from 'src/commons/guards/permissions.guard'
 import { Permissions } from 'src/commons/decorators/permissions.decorator'
 import { PermissionsEnum } from 'src/commons/enums/permissions.enum'
+import { AuthSource, AuthSourceEnum } from 'src/commons/decorators/auth-source.decorator'
 
 @ApiTags('Candidacy')
 @ApiBearerAuth()
 @Controller('candidacy')
 @UseGuards(RemoteJwtAuthGuard, PermissionsGuard)
 export class CandidacyController {
-  constructor(private readonly candidacyService: CandidacyService) {}
+  constructor(private readonly candidacyService: CandidacyService) { }
 
   // -------------------------------------------------------------------------
   // Visão do candidato (basta estar autenticado)
   // -------------------------------------------------------------------------
-
+  @AuthSource(AuthSourceEnum.PORTAL_CAND)
   @Post()
   @ApiOperation({
     summary: 'Candidatar-se a uma vaga publicada (candidato autenticado)',
@@ -60,6 +61,7 @@ export class CandidacyController {
   }
 
   @Get('me')
+  @AuthSource(AuthSourceEnum.PORTAL_CAND)
   @ApiOperation({
     summary: 'Listar as minhas candidaturas (visão do candidato)',
   })
@@ -68,6 +70,7 @@ export class CandidacyController {
     return this.candidacyService.findMine(req.user.username, query)
   }
 
+  @AuthSource(AuthSourceEnum.PORTAL_CAND)
   @Get('me/:code')
   @ApiOperation({
     summary: 'Detalhe de uma das minhas candidaturas, com histórico',
@@ -79,6 +82,7 @@ export class CandidacyController {
     return this.candidacyService.findMineOne(req.user.username, code)
   }
 
+  @AuthSource(AuthSourceEnum.PORTAL_CAND)
   @Patch('me/:code/withdraw')
   @ApiOperation({
     summary: 'Retirar/desistir de uma candidatura ainda em curso',
