@@ -16,7 +16,7 @@ import { TeachingExperienceEntity } from '../entity/teaching-experience.entity'
 import { TeacherApplicationDocument } from '../entity/teacher-application-document.entity'
 import { ApplicationFile } from '../../../commons/types/application-file.type'
 import { User } from 'src/modules/user/entities/user.entity'
-import { HashService } from 'src/commons/services/hash.service'
+import { AuthApiService } from 'src/commons/services/auth-api.service'
 import { ApplicationStatusEntity } from '../entity/application-status.entity'
 import { AcademicDegreeEntity } from '../entity/academic-degree.entity'
 import { UpdateAcademicEducationItemDto } from '../dto/update-academic-educations.dto'
@@ -51,7 +51,7 @@ export class TeacherApplicationsService {
   constructor(
     private datasource: DataSource,
     private readonly storageService: StorageService,
-    private readonly hashService: HashService,
+    private readonly AuthApiService: AuthApiService,
     @InjectRepository(PersonEntity)
     private readonly personRepository: Repository<PersonEntity>,
     @InjectRepository(CandidateEntity)
@@ -76,7 +76,7 @@ export class TeacherApplicationsService {
 
     let hashPassword: string
     try {
-      hashPassword = await this.hashService.hash(personal.documentNumber)
+      hashPassword = await this.AuthApiService.hash(personal.documentNumber)
     } catch (error) {
       throw new InternalServerErrorException('Falha ao processar o cadastro.')
     }

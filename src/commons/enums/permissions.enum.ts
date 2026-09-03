@@ -67,4 +67,7 @@ export enum PermissionsEnum {
 
   READ_PERMISSIONS = 'read:permissions',
   WRITE_PERMISSIONS = 'write:permissions',
+
+  READ_ACADEMIC_DEGREES = 'read:academic-degrees',
+  WRITE_ACADEMIC_DEGREES = 'write:academic-degrees',
 }

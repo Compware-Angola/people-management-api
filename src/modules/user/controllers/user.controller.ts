@@ -10,22 +10,22 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common'
-import { UserService } from './user.service'
-import { CreateUserDto } from './dto/create-user.dto'
-import { UpdateUserDto } from './dto/update-user.dto'
-import { UserQueryDto } from './dto/user-query.dto'
+import { CreateUserDto } from '../dto/create-user.dto'
+import { UpdateUserDto } from '../dto/update-user.dto'
+import { UserQueryDto } from '../dto/user-query.dto'
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger'
-import { RemoteJwtAuthGuard } from '../../commons/guards/remote-jwt-auth.guard'
-import { PermissionsGuard } from '../../commons/guards/permissions.guard'
-import { Permissions } from '../../commons/decorators/permissions.decorator'
-import { PermissionsEnum } from '../../commons/enums/permissions.enum'
+import { RemoteJwtAuthGuard } from '../../../commons/guards/remote-jwt-auth.guard'
+import { PermissionsGuard } from '../../../commons/guards/permissions.guard'
+import { Permissions } from '../../../commons/decorators/permissions.decorator'
+import { PermissionsEnum } from '../../../commons/enums/permissions.enum'
+import { UserService } from '../services/user.service'
 
 @Controller('users')
 @ApiTags('Users')
 @ApiBearerAuth()
 @UseGuards(RemoteJwtAuthGuard, PermissionsGuard)
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService) { }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
