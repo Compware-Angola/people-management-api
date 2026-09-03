@@ -10,9 +10,11 @@ import { UserCollaboratorEntity } from './entities/user-collaborator.entity'
 import { AuthApiService } from 'src/commons/services/auth-api.service'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, PersonEntity, UserCollaboratorEntity])],
+  imports: [
+    TypeOrmModule.forFeature([User, PersonEntity, UserCollaboratorEntity]),
+  ],
   controllers: [UserController, UserCollaboratorController],
   providers: [UserCollaboratorService, UserService, AuthApiService],
   exports: [UserCollaboratorService, UserService],
 })
-export class UserModule { }
+export class UserModule {}

@@ -25,7 +25,7 @@ import { UserService } from '../services/user.service'
 @ApiBearerAuth()
 @UseGuards(RemoteJwtAuthGuard, PermissionsGuard)
 export class UserController {
-  constructor(private readonly userService: UserService) { }
+  constructor(private readonly userService: UserService) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)

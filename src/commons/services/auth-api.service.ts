@@ -14,6 +14,34 @@ type IdentityPayload = {
     platformUserKey: 'GA' | 'GP'
   }[]
 }
+type IdentityResponse = {
+  identity: {
+    id: number
+    username: string
+    email: string
+    name: string
+    firstName: string
+    lastName: string
+    phone: string
+    bi: string
+    avatar: string
+    status: number
+    emailVerified: number
+    phoneVerified: number
+    failedLoginAttempts: number
+    lockedUntil: null
+    lastLoginAt: null
+    passwordChangedAt: null
+    createdAt: string
+    updatedAt: string
+  }
+  platformsSummary: [
+    {
+      platformCode: 'GP'
+      status: 'granted'
+    },
+  ]
+}
 @Injectable()
 export class AuthApiService {
   private readonly baseUrl: string
@@ -66,7 +94,7 @@ export class AuthApiService {
     }
   }
 
-  async createIdentity(payload: IdentityPayload): Promise<void> {
+  async createIdentity(payload: IdentityPayload): Promise<IdentityResponse> {
     try {
       const response = await fetch(`${this.baseUrl}/identity`, {
         method: 'POST',
@@ -79,6 +107,7 @@ export class AuthApiService {
       if (!response.ok) {
         throw new Error(`Hash service returned ${response.status}`)
       }
+      return (await response.json()) as IdentityResponse
     } catch (error) {
       console.error('Error calling create identity service:', error)
       throw new InternalServerErrorException('Erro ao criar identidade')

@@ -8,8 +8,10 @@ import { CreateUserDto } from '../dto/create-user.dto'
 import { UpdateUserDto } from '../dto/update-user.dto'
 import { UserQueryDto } from '../dto/user-query.dto'
 import { InjectDataSource } from '@nestjs/typeorm'
-import { DataSource } from 'typeorm'
+import { DataSource, QueryRunner } from 'typeorm'
 import { EnvService } from 'src/commons/utils/env/env.service'
+import { AuthApiService } from 'src/commons/services/auth-api.service'
+import { PersonEntity } from '../entities/person.entity'
 
 @Injectable()
 export class UserService {
@@ -18,6 +20,7 @@ export class UserService {
   constructor(
     @InjectDataSource()
     private readonly dataSource: DataSource,
+    private readonly AuthApiService: AuthApiService,
     private readonly envService: EnvService,
   ) {
     this.hashServiceUrl = this.envService.get('HASH_SERVICE_URL') || ''
@@ -46,6 +49,29 @@ export class UserService {
   }
 
   async create(createUserDto: CreateUserDto) {
+    const [biExists, nifExists, phoneExists] = await Promise.all([
+      this.checkBI(createUserDto.bi),
+      createUserDto.nif
+        ? this.checkNIF(createUserDto.nif)
+        : Promise.resolve(false),
+      this.checkPhoneNumber(createUserDto.phone),
+    ])
+    if (biExists) {
+      throw new BadRequestException('Já existe um usuário com este BI')
+    }
+    if (nifExists) {
+      throw new BadRequestException('Já existe um usuário com este NIF')
+    }
+    if (phoneExists) {
+      throw new BadRequestException('Já existe um usuário com este telefone')
+    }
+    
+    const queryRunner = this.dataSource.createQueryRunner()
+    await queryRunner.connect()
+    await queryRunner.startTransaction()
+    const person = await this.createPerson(queryRunner, createUserDto)
+    await queryRunner.manager.save(PersonEntity, person)
+
     const passwordHash = await this.getHash(createUserDto.bi)
 
     try {
@@ -259,5 +285,64 @@ export class UserService {
     }
     console.error(`Error to ${action} user:`, error)
     throw new InternalServerErrorException(`Erro ao ${action} usuário.`)
+  }
+  private async createPerson(
+    queryRunner: QueryRunner,
+    createUserDto: CreateUserDto,
+  ): Promise<PersonEntity> {
+    const person = queryRunner.manager.create(PersonEntity, {
+      name: createUserDto.name,
+      identityDocument: createUserDto.bi ?? null,
+      taxIdentificationNumber: createUserDto.nif ?? null,
+      phone: createUserDto.phone ?? null,
+      alternativePhone: createUserDto.alternativePhone ?? null,
+      status: createUserDto.status ?? 1,
+    })
+
+    return queryRunner.manager.save(PersonEntity, person)
+  }
+  private splitName(fullName: string): {
+    firstName: string
+    lastName: string
+  } {
+    const parts = fullName.trim().split(/\s+/).filter(Boolean)
+
+    if (parts.length === 0) {
+      return {
+        firstName: '',
+        lastName: '',
+      }
+    }
+
+    if (parts.length === 1) {
+      return {
+        firstName: parts[0],
+        lastName: '',
+      }
+    }
+
+    return {
+      firstName: parts[0],
+      lastName: parts.slice(1).join(' '),
+    }
+  }
+  private async checkBI(bi: string): Promise<boolean> {
+    return this.dataSource
+      .getRepository(PersonEntity)
+      .findOne({ where: { identityDocument: bi } })
+      .then((person) => !!person)
+  }
+
+  private async checkNIF(nif: string): Promise<boolean> {
+    return this.dataSource
+      .getRepository(PersonEntity)
+      .findOne({ where: { taxIdentificationNumber: nif } })
+      .then((person) => !!person)
+  }
+  private async checkPhoneNumber(phone: string): Promise<boolean> {
+    return this.dataSource
+      .getRepository(PersonEntity)
+      .findOne({ where: { phone } })
+      .then((person) => !!person)
   }
 }
