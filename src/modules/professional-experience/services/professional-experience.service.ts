@@ -18,7 +18,7 @@ export class ProfessionalExperienceService {
   async createMany(
     payload: DecodedUserPayload,
     dtos: CreateProfessionalExperienceDto[],
-  ): Promise<ProfessionalExperienceEntity[]> {
+  ) {
     const personId = Number(payload.personId)
 
     await this.ensurePersonExists(personId)
@@ -39,8 +39,11 @@ export class ProfessionalExperienceService {
           personId,
         }),
       )
-
-      return manager.save(ProfessionalExperienceEntity, experiences)
+      const savedExperiences = await manager.save(
+        ProfessionalExperienceEntity,
+        experiences,
+      )
+      return { experiences: savedExperiences }
     })
   }
 
@@ -48,20 +51,21 @@ export class ProfessionalExperienceService {
    * Lists all professional experiences belonging to
    * the authenticated person.
    */
-  async findMyExperiences(
-    payload: DecodedUserPayload,
-  ): Promise<ProfessionalExperienceEntity[]> {
+  async findMyExperiences(payload: DecodedUserPayload) {
     const personId = Number(payload.personId)
 
-    return this.dataSource.getRepository(ProfessionalExperienceEntity).find({
-      where: {
-        personId,
-      },
-      order: {
-        startYear: 'DESC',
-        id: 'DESC',
-      },
-    })
+    const experiences = await this.dataSource
+      .getRepository(ProfessionalExperienceEntity)
+      .find({
+        where: {
+          personId,
+        },
+        order: {
+          startYear: 'DESC',
+          id: 'DESC',
+        },
+      })
+    return { experiences }
   }
 
   /**
@@ -72,7 +76,7 @@ export class ProfessionalExperienceService {
     payload: DecodedUserPayload,
     id: number,
     dto: UpdateProfessionalExperienceDto,
-  ): Promise<ProfessionalExperienceEntity> {
+  ) {
     const personId = Number(payload.personId)
 
     return this.dataSource.transaction(async (manager) => {
@@ -91,7 +95,11 @@ export class ProfessionalExperienceService {
 
       this.applyChanges(experience, dto)
 
-      return manager.save(ProfessionalExperienceEntity, experience)
+      const updatedExperience = await manager.save(
+        ProfessionalExperienceEntity,
+        experience,
+      )
+      return { experience: updatedExperience }
     })
   }
 

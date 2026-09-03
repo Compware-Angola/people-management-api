@@ -15,6 +15,7 @@ import {
 
 import {
   ApiBearerAuth,
+  ApiBody,
   ApiCreatedResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
@@ -46,6 +47,13 @@ export class ProfessionalExperienceController {
 
   @Post('me')
   @HttpCode(HttpStatus.CREATED)
+  @ApiBody({
+    type: CreateProfessionalExperienceDto,
+    isArray: true,
+  })
+  @ApiCreatedResponse({
+    description: 'Professional experiences created successfully.',
+  })
   @ApiOperation({
     summary: 'Create professional experiences',
     description:
