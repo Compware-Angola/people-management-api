@@ -17,7 +17,6 @@ interface AuthenticatedUser {
   sub: number
   username?: string
   email?: string
-  platformUserKey?: string
 }
 
 declare module 'express' {

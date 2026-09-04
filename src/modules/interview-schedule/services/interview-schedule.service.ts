@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { ILike, Repository } from 'typeorm'
+import { Brackets, ILike, Repository } from 'typeorm'
 
 import { PaginatedResponseDto } from 'src/commons/dto/pagination-response.dto'
 
@@ -13,6 +13,9 @@ import { InterviewScheduleEntity } from '../entities/interview-schedule.entity'
 import { InterviewScheduleInterviewerEntity } from '../entities/interview-schedule-interviewer.entity'
 import { InterviewModalityEntity } from '../entities/interview-modality.entity'
 import { InterviewScheduleStateEntity } from '../entities/interview-schedule-state.entity'
+
+import { Candidacy } from 'src/modules/candidacy/entities/candidacy.entity'
+import { User } from 'src/modules/user/entities/user.entity'
 
 import { CreateInterviewScheduleDto } from '../dto/create-interview-schedule.dto'
 import { UpdateInterviewScheduleDto } from '../dto/update-interview-schedule.dto'
@@ -31,14 +34,27 @@ export class InterviewScheduleService {
     private readonly modalityRepository: Repository<InterviewModalityEntity>,
     @InjectRepository(InterviewScheduleStateEntity)
     private readonly stateRepository: Repository<InterviewScheduleStateEntity>,
+    @InjectRepository(Candidacy)
+    private readonly candidacyRepository: Repository<Candidacy>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
   ) {}
 
   async create(
     dto: CreateInterviewScheduleDto,
     createdById?: number | null,
   ): Promise<InterviewScheduleEntity> {
+    await this.assertApplicationExists(dto.applicationId)
     await this.assertModalityExists(dto.modalityId)
+    this.assertFutureDateTime(dto.interviewDate)
 
+    if (dto.interviewerUserIds?.length) {
+      await this.assertNoScheduleConflict(
+        new Date(dto.interviewDate),
+        dto.endTime ?? null,
+        dto.interviewerUserIds,
+      )
+    }
     const stateId =
       dto.stateId !== undefined
         ? await this.assertStateExists(dto.stateId)
@@ -56,7 +72,7 @@ export class InterviewScheduleService {
         note: dto.note?.trim() || null,
         justification: dto.justification?.trim() || null,
         stateId,
-        createdById: createdById ?? null,
+        createdById: 165,
       })
 
       let saved: InterviewScheduleEntity
@@ -156,9 +172,11 @@ export class InterviewScheduleService {
     }
 
     if (dto.applicationId !== undefined) {
+      await this.assertApplicationExists(dto.applicationId)
       schedule.applicationId = dto.applicationId
     }
     if (dto.interviewDate !== undefined) {
+      this.assertFutureDateTime(dto.interviewDate)
       schedule.interviewDate = new Date(dto.interviewDate)
     }
     if (dto.durationMinutes !== undefined) {
@@ -178,6 +196,55 @@ export class InterviewScheduleService {
     }
     if (dto.justification !== undefined) {
       schedule.justification = dto.justification?.trim() || null
+    }
+
+    const hasScheduleChange =
+      dto.interviewDate !== undefined || dto.endTime !== undefined
+    const hasInterviewersChange = dto.interviewerUserIds !== undefined
+
+    if (hasScheduleChange && hasInterviewersChange) {
+      const effectiveInterviewDate = dto.interviewDate
+        ? new Date(dto.interviewDate)
+        : schedule.interviewDate
+      const effectiveEndTime =
+        dto.endTime !== undefined ? dto.endTime : schedule.endTime
+      const effectiveUserIds = dto.interviewerUserIds ?? []
+
+      if (effectiveUserIds.length) {
+        await this.assertNoScheduleConflict(
+          effectiveInterviewDate,
+          effectiveEndTime,
+          effectiveUserIds,
+          id,
+        )
+      }
+    } else if (hasScheduleChange && !hasInterviewersChange) {
+      const currentInterviewerIds = schedule.interviewers.map((i) => i.userId)
+      if (currentInterviewerIds.length) {
+        const effectiveInterviewDate = dto.interviewDate
+          ? new Date(dto.interviewDate)
+          : schedule.interviewDate
+        const effectiveEndTime =
+          dto.endTime !== undefined ? dto.endTime : schedule.endTime
+
+        await this.assertNoScheduleConflict(
+          effectiveInterviewDate,
+          effectiveEndTime,
+          currentInterviewerIds,
+          id,
+        )
+      }
+    } else if (!hasScheduleChange && hasInterviewersChange) {
+      const effectiveUserIds = dto.interviewerUserIds ?? []
+
+      if (effectiveUserIds.length) {
+        await this.assertNoScheduleConflict(
+          schedule.interviewDate,
+          schedule.endTime,
+          effectiveUserIds,
+          id,
+        )
+      }
     }
 
     return this.scheduleRepository.manager.transaction(async (manager) => {
@@ -224,6 +291,7 @@ export class InterviewScheduleService {
     userId: number,
   ): Promise<InterviewScheduleEntity> {
     await this.findOne(id)
+    await this.assertUserExists(userId)
 
     const existing = await this.interviewerRepository.findOne({
       where: { interviewScheduleId: id, userId },
@@ -299,6 +367,10 @@ export class InterviewScheduleService {
       return
     }
 
+    for (const userId of uniqueUserIds) {
+      await this.assertUserExists(userId)
+    }
+
     const rows = uniqueUserIds.map((userId) =>
       repository.create({ interviewScheduleId, userId }),
     )
@@ -320,6 +392,32 @@ export class InterviewScheduleService {
     }
 
     return modality.id
+  }
+
+  private async assertApplicationExists(id: number): Promise<number> {
+    const candidacy = await this.candidacyRepository.findOne({
+      where: { code: id },
+    })
+
+    if (!candidacy) {
+      throw new BadRequestException(
+        `Candidatura com o código ${id} não encontrada`,
+      )
+    }
+
+    return candidacy.code
+  }
+
+  private async assertUserExists(id: number): Promise<number> {
+    const user = await this.userRepository.findOne({ where: { id } })
+
+    if (!user) {
+      throw new BadRequestException(
+        `Utilizador com o código ${id} não encontrado`,
+      )
+    }
+
+    return user.id
   }
 
   private async assertStateExists(id: number): Promise<number> {
@@ -348,6 +446,82 @@ export class InterviewScheduleService {
     return state.id
   }
 
+  private assertFutureDateTime(interviewDate: string): void {
+    const scheduled = new Date(interviewDate)
+    const now = new Date()
+
+    if (scheduled <= now) {
+      throw new BadRequestException(
+        'Não é permitido agendar entrevista em data e hora anteriores ao momento atual',
+      )
+    }
+  }
+
+  private async assertNoScheduleConflict(
+    interviewDate: Date,
+    endTime: string | null,
+    interviewerUserIds: number[],
+    excludeScheduleId?: number,
+    durationMinutes?: number | null,
+  ): Promise<void> {
+    if (!interviewerUserIds.length) return
+
+    const scheduleStart = new Date(interviewDate)
+    const scheduleEnd = this.computeScheduleEnd(
+      scheduleStart,
+      endTime,
+      durationMinutes,
+    )
+
+    if (scheduleEnd <= scheduleStart) {
+      throw new BadRequestException(
+        'A hora de fim da entrevista deve ser posterior à hora de início',
+      )
+    }
+
+    const qb = this.interviewerRepository
+      .createQueryBuilder('ie')
+      .innerJoinAndSelect('ie.interviewSchedule', 'schedule')
+      .where('ie.userId IN (:...userIds)', { userIds: interviewerUserIds })
+
+    if (excludeScheduleId) {
+      qb.andWhere('schedule.id != :excludeId', { excludeId: excludeScheduleId })
+    }
+
+    const rows = await qb.getMany()
+
+    for (const row of rows) {
+      const existingStart = new Date(row.interviewSchedule.interviewDate)
+      const existingEnd = this.computeScheduleEnd(
+        existingStart,
+        row.interviewSchedule.endTime,
+        row.interviewSchedule.durationMinutes,
+      )
+
+      const overlaps =
+        scheduleStart < existingEnd && scheduleEnd > existingStart
+
+      if (overlaps) {
+        throw new BadRequestException(
+          `Conflito de agenda: o entrevistador (código ${row.userId}) já possui agendamento no período informado`,
+        )
+      }
+    }
+  }
+  private computeScheduleEnd(
+    start: Date,
+    endTime: string | null,
+    durationMinutes?: number | null,
+  ): Date {
+    if (endTime) {
+      const [hours, minutes] = endTime.split(':').map(Number)
+      const end = new Date(start)
+      end.setUTCHours(hours, minutes, 0, 0)
+      return end
+    }
+    const minutes = durationMinutes ?? 60
+    return new Date(start.getTime() + minutes * 60 * 1000)
+  }
   private handleDatabaseError(error: unknown): never {
     const err = error as { code?: string; message?: string } | null
     const message = typeof err?.message === 'string' ? err.message : ''

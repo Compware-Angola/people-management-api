@@ -6,6 +6,9 @@ import { InterviewScheduleInterviewerEntity } from './entities/interview-schedul
 import { InterviewModalityEntity } from './entities/interview-modality.entity'
 import { InterviewScheduleStateEntity } from './entities/interview-schedule-state.entity'
 
+import { Candidacy } from 'src/modules/candidacy/entities/candidacy.entity'
+import { User } from 'src/modules/user/entities/user.entity'
+
 import { InterviewScheduleService } from './services/interview-schedule.service'
 import { InterviewModalityService } from './services/interview-modality.service'
 import { InterviewScheduleStateService } from './services/interview-schedule-state.service'
@@ -21,6 +24,8 @@ import { InterviewScheduleStateController } from './controllers/interview-schedu
       InterviewScheduleInterviewerEntity,
       InterviewModalityEntity,
       InterviewScheduleStateEntity,
+      Candidacy,
+      User,
     ]),
   ],
   controllers: [
